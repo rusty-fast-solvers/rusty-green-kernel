@@ -7,7 +7,7 @@ import pytest
 @pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 5e-6)])
 def test_laplace_assemble(dtype, rtol, parallel):
     """Test the Laplace kernel."""
-    from fast_green_kernel.direct_evaluator import assemble_laplace_kernel
+    from rusty_green_kernel import assemble_laplace_kernel
 
     nsources = 10
     ntargets = 20
@@ -20,7 +20,7 @@ def test_laplace_assemble(dtype, rtol, parallel):
     sources = rng.random((3, nsources), dtype=dtype)
     sources[:, 0] = targets[:, 0]  # Test what happens if source = target
 
-    actual = assemble_laplace_kernel(targets, sources, dtype=dtype, parallel=parallel)
+    actual = assemble_laplace_kernel(sources, targets, dtype=dtype, parallel=parallel)
 
     # Calculate expected result
 
@@ -48,7 +48,7 @@ def test_laplace_assemble(dtype, rtol, parallel):
 @pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 5e-6)])
 def test_laplace_evaluate_only_values(dtype, rtol, parallel):
     """Test the Laplace kernel."""
-    from fast_green_kernel.direct_evaluator import evaluate_laplace_kernel
+    from rusty_green_kernel import evaluate_laplace_kernel
 
     nsources = 10
     ntargets = 20
@@ -64,7 +64,7 @@ def test_laplace_evaluate_only_values(dtype, rtol, parallel):
     charges = rng.random((ncharge_vecs, nsources), dtype=dtype)
 
     actual = evaluate_laplace_kernel(
-        targets, sources, charges, dtype=dtype, parallel=parallel
+        sources, targets, charges, dtype=dtype, parallel=parallel
     )
 
     # Calculate expected result
@@ -95,7 +95,7 @@ def test_laplace_evaluate_only_values(dtype, rtol, parallel):
 @pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 5e-6)])
 def test_laplace_evaluate_values_and_deriv(dtype, rtol, parallel):
     """Test the Laplace kernel."""
-    from fast_green_kernel.direct_evaluator import evaluate_laplace_kernel
+    from rusty_green_kernel import evaluate_laplace_kernel
 
     nsources = 10
     ntargets = 20
@@ -111,7 +111,7 @@ def test_laplace_evaluate_values_and_deriv(dtype, rtol, parallel):
     charges = rng.random((ncharge_vecs, nsources), dtype=dtype)
 
     actual = evaluate_laplace_kernel(
-        targets, sources, charges, dtype=dtype, return_gradients=True, parallel=parallel
+        sources, targets, charges, dtype=dtype, return_gradients=True, parallel=parallel
     )
 
     # Calculate expected result
@@ -142,7 +142,7 @@ def test_laplace_evaluate_values_and_deriv(dtype, rtol, parallel):
 @pytest.mark.parametrize("dtype,rtol", [(np.complex128, 1e-14), (np.complex64, 5e-6)])
 def test_helmholtz_assemble(dtype, rtol, parallel):
     """Test the Laplace kernel."""
-    from fast_green_kernel.direct_evaluator import assemble_helmholtz_kernel
+    from rusty_green_kernel import assemble_helmholtz_kernel
 
     wavenumber = 2.5
 
@@ -165,7 +165,7 @@ def test_helmholtz_assemble(dtype, rtol, parallel):
     sources[:, 0] = targets[:, 0]  # Test what happens if source = target
 
     actual = assemble_helmholtz_kernel(
-        targets, sources, wavenumber, dtype=dtype, parallel=parallel
+        sources, targets, wavenumber, dtype=dtype, parallel=parallel
     )
 
     # Calculate expected result
@@ -191,7 +191,7 @@ def test_helmholtz_assemble(dtype, rtol, parallel):
 @pytest.mark.parametrize("dtype,rtol", [(np.complex128, 1e-14), (np.complex64, 5e-6)])
 def test_helmholtz_evaluate_only_values(dtype, rtol):
     """Test the Laplace kernel."""
-    from fast_green_kernel.direct_evaluator import evaluate_helmholtz_kernel
+    from rusty_green_kernel import evaluate_helmholtz_kernel
 
     nsources = 10
     ntargets = 20
@@ -218,7 +218,7 @@ def test_helmholtz_evaluate_only_values(dtype, rtol):
     )
 
     actual = evaluate_helmholtz_kernel(
-        targets, sources, charges, wavenumber, dtype=dtype, parallel=False
+        sources, targets, charges, wavenumber, dtype=dtype, parallel=False
     )
 
     # Calculate expected result
@@ -247,7 +247,7 @@ def test_helmholtz_evaluate_only_values(dtype, rtol):
 @pytest.mark.parametrize("dtype,rtol", [(np.complex128, 1e-14), (np.complex64, 5e-6)])
 def test_helmholtz_evaluate_values_and_deriv(dtype, rtol, parallel):
     """Test the Laplace kernel."""
-    from fast_green_kernel.direct_evaluator import evaluate_helmholtz_kernel
+    from rusty_green_kernel import evaluate_helmholtz_kernel
 
     nsources = 10
     ntargets = 20
@@ -274,8 +274,8 @@ def test_helmholtz_evaluate_values_and_deriv(dtype, rtol, parallel):
     )
 
     actual = evaluate_helmholtz_kernel(
-        targets,
         sources,
+        targets,
         charges,
         wavenumber,
         dtype=dtype,

@@ -17,3 +17,7 @@ rusty-kernel-tools = { version = "0.1", path = "../rusty-kernel-tools"}
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
+
+[[bench]]
+name = "direct_evaluator_benchmarks"
+harness = false

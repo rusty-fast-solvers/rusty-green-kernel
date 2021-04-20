@@ -32,7 +32,7 @@ def align_data(arr, dtype=None):
     return np.require(arr, dtype=dtype, requirements=["C", "A"])
 
 
-def assemble_laplace_kernel(targets, sources, dtype=np.float64, parallel=True):
+def assemble_laplace_kernel(sources, targets, dtype=np.float64, parallel=True):
     """Assemble the Laplace kernel matrix for many targets and sources."""
 
     if dtype not in [np.float64, np.float32]:
@@ -60,8 +60,8 @@ def assemble_laplace_kernel(targets, sources, dtype=np.float64, parallel=True):
 
     if dtype == np.float32:
         lib.assemble_laplace_kernel_f32(
-            as_float_ptr(targets),
             as_float_ptr(sources),
+            as_float_ptr(targets),
             as_float_ptr(result),
             as_usize(nsources),
             as_usize(ntargets),
@@ -69,8 +69,8 @@ def assemble_laplace_kernel(targets, sources, dtype=np.float64, parallel=True):
         )
     elif dtype == np.float64:
         lib.assemble_laplace_kernel_f64(
-            as_double_ptr(targets),
             as_double_ptr(sources),
+            as_double_ptr(targets),
             as_double_ptr(result),
             as_usize(nsources),
             as_usize(ntargets),
@@ -83,7 +83,7 @@ def assemble_laplace_kernel(targets, sources, dtype=np.float64, parallel=True):
 
 
 def evaluate_laplace_kernel(
-    targets, sources, charges, dtype=np.float64, parallel=True, return_gradients=False
+    sources, targets, charges, dtype=np.float64, parallel=True, return_gradients=False
 ):
     """Evaluate the Laplace kernel matrix for many targets and sources."""
 
@@ -129,8 +129,8 @@ def evaluate_laplace_kernel(
 
     if dtype == np.float32:
         lib.evaluate_laplace_kernel_f32(
-            as_float_ptr(targets),
             as_float_ptr(sources),
+            as_float_ptr(targets),
             as_float_ptr(charges),
             as_float_ptr(result),
             as_usize(nsources),
@@ -141,8 +141,8 @@ def evaluate_laplace_kernel(
         )
     elif dtype == np.float64:
         lib.evaluate_laplace_kernel_f64(
-            as_double_ptr(targets),
             as_double_ptr(sources),
+            as_double_ptr(targets),
             as_double_ptr(charges),
             as_double_ptr(result),
             as_usize(nsources),
@@ -158,7 +158,7 @@ def evaluate_laplace_kernel(
 
 
 def assemble_helmholtz_kernel(
-    targets, sources, wavenumber, dtype=np.complex128, parallel=True
+    sources, targets, wavenumber, dtype=np.complex128, parallel=True
 ):
     """Assemble the Helmholtz kernel matrix for many targets and sources."""
 
@@ -194,8 +194,8 @@ def assemble_helmholtz_kernel(
 
     if real_type == np.float32:
         lib.assemble_helmholtz_kernel_f32(
-            as_float_ptr(targets),
             as_float_ptr(sources),
+            as_float_ptr(targets),
             as_float_ptr(buffer),
             as_double(np.real(wavenumber)),
             as_double(np.imag(wavenumber)),
@@ -205,8 +205,8 @@ def assemble_helmholtz_kernel(
         )
     elif real_type == np.float64:
         lib.assemble_helmholtz_kernel_f64(
-            as_double_ptr(targets),
             as_double_ptr(sources),
+            as_double_ptr(targets),
             as_double_ptr(buffer),
             as_double(np.real(wavenumber)),
             as_double(np.imag(wavenumber)),
@@ -223,8 +223,8 @@ def assemble_helmholtz_kernel(
 
 
 def evaluate_helmholtz_kernel(
-    targets,
     sources,
+    targets,
     charges,
     wavenumber,
     dtype=np.complex128,
@@ -285,8 +285,8 @@ def evaluate_helmholtz_kernel(
 
     if dtype == np.complex64:
         lib.evaluate_helmholtz_kernel_f32(
-            as_float_ptr(targets),
             as_float_ptr(sources),
+            as_float_ptr(targets),
             as_float_ptr(charge_buffer),
             as_float_ptr(result_buffer),
             as_double(np.real(wavenumber)),
@@ -299,8 +299,8 @@ def evaluate_helmholtz_kernel(
         )
     elif dtype == np.complex128:
         lib.evaluate_helmholtz_kernel_f64(
-            as_double_ptr(targets),
             as_double_ptr(sources),
+            as_double_ptr(targets),
             as_double_ptr(charge_buffer),
             as_double_ptr(result_buffer),
             as_double(np.real(wavenumber)),

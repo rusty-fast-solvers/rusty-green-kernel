@@ -9,8 +9,8 @@ use crate::make_helmholtz_evaluator;
 
 #[no_mangle]
 pub extern "C" fn assemble_laplace_kernel_f64(
-    target_ptr: *const f64,
     source_ptr: *const f64,
+    target_ptr: *const f64,
     result_ptr: *mut f64,
     nsources: usize,
     ntargets: usize,
@@ -32,8 +32,8 @@ pub extern "C" fn assemble_laplace_kernel_f64(
 
 #[no_mangle]
 pub extern "C" fn assemble_laplace_kernel_f32(
-    target_ptr: *const f32,
     source_ptr: *const f32,
+    target_ptr: *const f32,
     result_ptr: *mut f32,
     nsources: usize,
     ntargets: usize,
@@ -55,8 +55,8 @@ pub extern "C" fn assemble_laplace_kernel_f32(
 
 #[no_mangle]
 pub extern "C" fn evaluate_laplace_kernel_f64(
-    target_ptr: *const f64,
     source_ptr: *const f64,
+    target_ptr: *const f64,
     charge_ptr: *const f64,
     result_ptr: *mut f64,
     nsources: usize,
@@ -100,8 +100,8 @@ pub extern "C" fn evaluate_laplace_kernel_f64(
 
 #[no_mangle]
 pub extern "C" fn evaluate_laplace_kernel_f32(
-    target_ptr: *const f32,
     source_ptr: *const f32,
+    target_ptr: *const f32,
     charge_ptr: *const f32,
     result_ptr: *mut f32,
     nsources: usize,
@@ -145,8 +145,8 @@ pub extern "C" fn evaluate_laplace_kernel_f32(
 
 #[no_mangle]
 pub extern "C" fn assemble_helmholtz_kernel_f64(
-    target_ptr: *const f64,
     source_ptr: *const f64,
+    target_ptr: *const f64,
     result_ptr: *mut f64,
     wavenumber_real: f64,
     wavenumber_imag: f64,
@@ -176,8 +176,8 @@ pub extern "C" fn assemble_helmholtz_kernel_f64(
 
 #[no_mangle]
 pub extern "C" fn assemble_helmholtz_kernel_f32(
-    target_ptr: *const f32,
     source_ptr: *const f32,
+    target_ptr: *const f32,
     result_ptr: *mut f32,
     wavenumber_real: f64,
     wavenumber_imag: f64,
@@ -207,8 +207,8 @@ pub extern "C" fn assemble_helmholtz_kernel_f32(
 
 #[no_mangle]
 pub extern "C" fn evaluate_helmholtz_kernel_f64(
-    target_ptr: *const f64,
     source_ptr: *const f64,
+    target_ptr: *const f64,
     charge_ptr: *const f64,
     result_ptr: *mut f64,
     wavenumber_real: f64,
@@ -263,8 +263,8 @@ pub extern "C" fn evaluate_helmholtz_kernel_f64(
 
 #[no_mangle]
 pub extern "C" fn evaluate_helmholtz_kernel_f32(
-    target_ptr: *const f32,
     source_ptr: *const f32,
+    target_ptr: *const f32,
     charge_ptr: *const f32,
     result_ptr: *mut f32,
     wavenumber_real: f64,
