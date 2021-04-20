@@ -1,0 +1,19 @@
+[package]
+name = "rusty-green-kernel"
+version = "0.1.0"
+authors = ["Timo Betcke <timo.betcke@gmail.com>"]
+edition = "2018"
+
+[lib]
+name = "rusty_green_kernel"
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+ndarray = { version = "0.15", features = ["rayon"] }
+approx = "0.4"
+num = "0.4"
+rand = "0.8"
+rusty-kernel-tools = { version = "0.1", path = "../rusty-kernel-tools"}
+
+[dev-dependencies]
+criterion = { version = "0.3", features = ["html_reports"] }
