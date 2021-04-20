@@ -1,6 +1,7 @@
 pub mod base;
 mod helmholtz;
 mod laplace;
+mod modified_helmholtz;
 
 pub use base::DirectEvaluatorAccessor;
 pub use base::ComplexDirectEvaluator;
@@ -42,6 +43,34 @@ pub fn make_laplace_evaluator_owned<T: RealType>(
         _marker: std::marker::PhantomData::<T>,
     }
 }
+
+/// Make a modified Helmholtz evaluator from references to the data.
+pub fn make_modified_helmholtz_evaluator<'a, T: RealType>(
+    sources: ArrayView2<'a, T>,
+    targets: ArrayView2<'a, T>,
+    omega: f64,
+) -> DirectEvaluator<ParticleContainerView<'a, T>, T> {
+    DirectEvaluator::<ParticleContainerView<'a, T>, T> {
+        kernel_type: KernelType::ModifiedHelmholtz(omega),
+        particle_container: make_particle_container(sources, targets),
+        _marker: std::marker::PhantomData::<T>,
+    }
+}
+
+/// Make a modified Helmholtz evaluator by taking ownership.
+pub fn make_modified_helmholtz_evaluator_owned<T: RealType>(
+    sources: Array2<T>,
+    targets: Array2<T>,
+    omega: f64,
+) -> DirectEvaluator<ParticleContainer<T>, T> {
+    DirectEvaluator::<ParticleContainer<T>, T> {
+        kernel_type: KernelType::ModifiedHelmholtz(omega),
+        particle_container: make_particle_container_owned(sources, targets),
+        _marker: std::marker::PhantomData::<T>,
+    }
+}
+
+
 
 /// Make a Helmholtz evaluator from references to the data.
 pub fn make_helmholtz_evaluator<'a, T: RealType>(

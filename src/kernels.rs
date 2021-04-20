@@ -1,7 +1,7 @@
 //! Definitions of the supported Greens function kernels.
-use rusty_kernel_tools::RealType;
 use ndarray::{Array1, ArrayView1, ArrayView2, ArrayViewMut2, Axis};
 use num;
+use rusty_kernel_tools::RealType;
 
 pub enum EvalMode {
     Value,
@@ -278,5 +278,129 @@ pub fn helmholtz_kernel_impl_deriv<T: RealType>(
                 },
             )
         });
+}
 
+pub fn modified_helmholtz_kernel<T: RealType>(
+    target: ArrayView1<T>,
+    sources: ArrayView2<T>,
+    result: ArrayViewMut2<T>,
+    omega: f64,
+    eval_mode: &EvalMode,
+) {
+    match eval_mode {
+        EvalMode::Value => modified_helmholtz_kernel_impl_no_deriv(target, sources, omega, result),
+        EvalMode::ValueGrad => modified_helmholtz_kernel_impl_deriv(target, sources, omega, result),
+    };
+}
+
+/// Implementation of the Laplace kernel without derivatives
+pub fn modified_helmholtz_kernel_impl_no_deriv<T: RealType>(
+    target: ArrayView1<T>,
+    sources: ArrayView2<T>,
+    omega: f64,
+    mut result: ArrayViewMut2<T>,
+) {
+    use ndarray::Zip;
+
+    let zero: T = num::traits::zero();
+
+    let m_inv_4pi: T =
+        num::traits::cast::cast::<f64, T>(0.25).unwrap() * num::traits::FloatConst::FRAC_1_PI();
+
+    let omega: T = num::traits::cast::cast::<f64, T>(omega).unwrap();
+
+    result.fill(zero);
+
+    Zip::from(target)
+        .and(sources.rows())
+        .for_each(|&target_value, source_row| {
+            Zip::from(source_row)
+                .and(result.index_axis_mut(Axis(0), 0))
+                .for_each(|&source_value, result_ref| {
+                    *result_ref += (target_value - source_value) * (target_value - source_value)
+                })
+        });
+
+    result
+        .index_axis_mut(Axis(0), 0)
+        .map_inplace(|item| *item = item.sqrt());
+
+    result
+        .index_axis_mut(Axis(0), 0)
+        .map_inplace(|item| *item = (-omega * *item).exp() * m_inv_4pi / *item);
+    result
+        .index_axis_mut(Axis(0), 0)
+        .iter_mut()
+        .filter(|item| !item.is_finite())
+        .for_each(|item| *item = zero);
+}
+
+/// Implementation of the Laplace kernel with derivatives
+pub fn modified_helmholtz_kernel_impl_deriv<T: RealType>(
+    target: ArrayView1<T>,
+    sources: ArrayView2<T>,
+    omega: f64,
+    mut result: ArrayViewMut2<T>,
+) {
+    use ndarray::Zip;
+    
+    let zero: T = num::traits::zero();
+    let one: T = num::traits::one();
+
+    let m_inv_4pi: T =
+        num::traits::cast::<f64, T>(0.25).unwrap() * num::traits::FloatConst::FRAC_1_PI();
+
+    let omega: T = num::traits::cast::cast::<f64, T>(omega).unwrap();
+
+    result.fill(zero);
+
+    let mut dist = ndarray::Array1::<T>::zeros(sources.len_of(Axis(1)));
+
+    // First compute the Green fct. values
+
+    Zip::from(target)
+        .and(sources.rows())
+        .for_each(|&target_value, source_row| {
+            Zip::from(source_row)
+                .and(dist.view_mut())
+                .for_each(|&source_value, dist_ref| {
+                    *dist_ref += (target_value - source_value) * (target_value - source_value)
+                })
+        });
+
+    dist.map_inplace(|item| *item = item.sqrt());
+
+    // Now compute the derivatives.
+
+    Zip::from(result.index_axis_mut(Axis(0), 0))
+        .and(dist.view())
+        .for_each(|result_ref, &dist_value| {
+            *result_ref = (-omega * dist_value).exp() * m_inv_4pi / dist_value.sqrt()
+        });
+
+    let (values, mut derivs) = result.view_mut().split_at(Axis(0), 1);
+    let values = values.index_axis(Axis(0), 0);
+
+    Zip::from(derivs.rows_mut())
+        .and(target.view())
+        .and(sources.rows())
+        .for_each(|deriv_row, &target_value, source_row| {
+            Zip::from(deriv_row)
+                .and(source_row)
+                .and(values)
+                .and(dist.view())
+                .for_each(|deriv_value, &source_value, &dist_value, &value| {
+                    *deriv_value = value * (target_value - source_value) / dist_value.powi(2)
+                        * (-omega * dist_value - one)
+                })
+        });
+
+    result.view_mut().axis_iter_mut(Axis(0)).for_each(|row|
+        Zip::from(row)
+        .and(dist.view())
+        .for_each(|elem, &dist_value|
+            if dist_value == zero {
+                *elem = zero;
+            })
+        );
 }

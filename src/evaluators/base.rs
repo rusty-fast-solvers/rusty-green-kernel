@@ -134,11 +134,19 @@ impl<P: ParticleContainerAccessor> RealDirectEvaluator
         threading_type: ThreadingType,
     ) {
         use super::laplace::assemble_in_place_impl_laplace;
+        use super::modified_helmholtz::assemble_in_place_impl_modified_helmholtz;
         match self.kernel_type {
             KernelType::Laplace => assemble_in_place_impl_laplace::<Self::FloatingPointType>(
                 self.sources(),
                 self.targets(),
                 result,
+                threading_type,
+            ),
+            KernelType::ModifiedHelmholtz(omega) => assemble_in_place_impl_modified_helmholtz::<Self::FloatingPointType>(
+                self.sources(),
+                self.targets(),
+                result,
+                omega,
                 threading_type,
             ),
             _ => panic!("Kernel not implemented for this evaluator."),
@@ -163,6 +171,7 @@ impl<P: ParticleContainerAccessor> RealDirectEvaluator
         threading_type: ThreadingType,
     ) {
         use super::laplace::evaluate_in_place_impl_laplace;
+        use super::modified_helmholtz::evaluate_in_place_impl_modified_helmholtz;
         match self.kernel_type {
             KernelType::Laplace => evaluate_in_place_impl_laplace(
                 self.sources(),
@@ -172,6 +181,16 @@ impl<P: ParticleContainerAccessor> RealDirectEvaluator
                 eval_mode,
                 threading_type,
             ),
+            KernelType::ModifiedHelmholtz(omega) => evaluate_in_place_impl_modified_helmholtz::<Self::FloatingPointType>(
+                self.sources(),
+                self.targets(),
+                charges,
+                result,
+                omega,
+                eval_mode,
+                threading_type,
+            ),
+
             _ => panic!("Kernel not implemented for this evaluator."),
         }
     }
