@@ -1,8 +1,7 @@
-/// Implementation of assembler function for Laplace kernels.
-use ndarray::{Array2, ArrayView2, ArrayViewMut2, ArrayViewMut3, Axis};
-use rusty_kernel_tools::{RealType, ThreadingType};
-use num::complex::Complex;
 use crate::kernels::EvalMode;
+use ndarray::{Array2, ArrayView2, ArrayViewMut2, ArrayViewMut3, Axis};
+use num::complex::Complex;
+use rusty_kernel_tools::{RealType, ThreadingType};
 
 /// Implementation of assembler function for Helmholtz.
 pub(crate) fn assemble_in_place_impl_helmholtz<T: RealType>(
