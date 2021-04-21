@@ -450,7 +450,7 @@ def test_modified_helmholtz_evaluate_values_and_deriv(dtype, rtol, parallel):
         expected[:, index, 0] = np.exp(-omega * dist) / (4 * np.pi * dist)
         expected[:, index, 1:] = (
             diff.T
-            / (4 * np.pi * dist.reshape(nsources, 1) ** 3)
+            / (4 * np.pi * dist.reshape(nsources, 1)** 3)
             * np.exp(-omega * dist.reshape(nsources, 1))
             * (-omega * dist.reshape(nsources, 1) - 1)
         )

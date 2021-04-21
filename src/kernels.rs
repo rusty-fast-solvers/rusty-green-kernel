@@ -343,7 +343,7 @@ pub fn modified_helmholtz_kernel_impl_deriv<T: RealType>(
     mut result: ArrayViewMut2<T>,
 ) {
     use ndarray::Zip;
-    
+
     let zero: T = num::traits::zero();
     let one: T = num::traits::one();
 
@@ -370,13 +370,14 @@ pub fn modified_helmholtz_kernel_impl_deriv<T: RealType>(
 
     dist.map_inplace(|item| *item = item.sqrt());
 
-    // Now compute the derivatives.
 
     Zip::from(result.index_axis_mut(Axis(0), 0))
         .and(dist.view())
         .for_each(|result_ref, &dist_value| {
-            *result_ref = (-omega * dist_value).exp() * m_inv_4pi / dist_value.sqrt()
+            *result_ref = (-omega * dist_value).exp() * m_inv_4pi / dist_value
         });
+
+        // Now compute the derivatives.
 
     let (values, mut derivs) = result.view_mut().split_at(Axis(0), 1);
     let values = values.index_axis(Axis(0), 0);
@@ -389,7 +390,7 @@ pub fn modified_helmholtz_kernel_impl_deriv<T: RealType>(
                 .and(source_row)
                 .and(values)
                 .and(dist.view())
-                .for_each(|deriv_value, &source_value, &dist_value, &value| {
+                .for_each(|deriv_value, &source_value, &value, &dist_value| {
                     *deriv_value = value * (target_value - source_value) / dist_value.powi(2)
                         * (-omega * dist_value - one)
                 })
