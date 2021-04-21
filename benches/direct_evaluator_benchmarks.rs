@@ -359,6 +359,182 @@ fn benchmark_helmholtz_evaluate_values_and_derivs_single_precision(c: &mut Crite
 }
 
 
+fn benchmark_modified_helmholtz_assemble_double_precision(c: &mut Criterion) {
+    let nsources = 20000;
+    let ntargets = 20000;
+
+    let omega = 2.5;
+
+    let mut rng = rand::thread_rng();
+
+    let mut sources = ndarray::Array2::<f64>::zeros((3, nsources));
+    let mut targets = ndarray::Array2::<f64>::zeros((3, ntargets));
+    let mut result = ndarray::Array2::<f64>::zeros((ntargets, nsources));
+
+    sources.map_inplace(|item| *item = rng.gen::<f64>());
+    targets.map_inplace(|item| *item = rng.gen::<f64>());
+
+    c.bench_function("modified helmholtz assemble double precision", |b| {
+        b.iter(|| {
+            make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega)
+                .assemble_in_place(black_box(result.view_mut()), ThreadingType::Parallel);
+        })
+    });
+}
+
+fn benchmark_modified_helmholtz_assemble_single_precision(c: &mut Criterion) {
+    let nsources = 20000;
+    let ntargets = 20000;
+
+    let omega = 2.5;
+
+    let mut rng = rand::thread_rng();
+
+    let mut sources = ndarray::Array2::<f32>::zeros((3, nsources));
+    let mut targets = ndarray::Array2::<f32>::zeros((3, ntargets));
+    let mut result = ndarray::Array2::<f32>::zeros((ntargets, nsources));
+
+    sources.map_inplace(|item| *item = rng.gen::<f32>());
+    targets.map_inplace(|item| *item = rng.gen::<f32>());
+
+    c.bench_function("modified helmholtz assemble single precision", |b| {
+        b.iter(|| {
+            make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega)
+                .assemble_in_place(black_box(result.view_mut()), ThreadingType::Parallel);
+        })
+    });
+}
+
+fn benchmark_modified_helmholtz_evaluate_values_double_precision(c: &mut Criterion) {
+    let nsources = 20000;
+    let ntargets = 20000;
+    let ncharge_vecs = 2;
+
+    type MyType = f64;
+
+    let omega = 2.5;
+
+    let mut rng = rand::thread_rng();
+
+    let mut sources = ndarray::Array2::<MyType>::zeros((3, nsources));
+    let mut targets = ndarray::Array2::<MyType>::zeros((3, ntargets));
+    let mut charges = ndarray::Array2::<MyType>::zeros((ncharge_vecs, nsources));
+    let mut result = ndarray::Array3::<MyType>::zeros((ncharge_vecs, ntargets, 1));
+
+    sources.map_inplace(|item| *item = rng.gen::<MyType>());
+    targets.map_inplace(|item| *item = rng.gen::<MyType>());
+    charges.map_inplace(|item| *item = rng.gen::<MyType>());
+
+    c.bench_function("modified helmholtz evaluate values double precision", |b| {
+        b.iter(|| {
+            make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega).evaluate_in_place(
+                charges.view(),
+                black_box(result.view_mut()),
+                &EvalMode::Value,
+                ThreadingType::Parallel,
+            );
+        })
+    });
+}
+
+fn benchmark_modified_helmholtz_evaluate_values_single_precision(c: &mut Criterion) {
+    let nsources = 20000;
+    let ntargets = 20000;
+    let ncharge_vecs = 2;
+
+    let omega = 2.5;
+
+    type MyType = f32;
+
+    let mut rng = rand::thread_rng();
+
+    let mut sources = ndarray::Array2::<MyType>::zeros((3, nsources));
+    let mut targets = ndarray::Array2::<MyType>::zeros((3, ntargets));
+    let mut charges = ndarray::Array2::<MyType>::zeros((ncharge_vecs, nsources));
+    let mut result = ndarray::Array3::<MyType>::zeros((ncharge_vecs, ntargets, 1));
+
+    sources.map_inplace(|item| *item = rng.gen::<MyType>());
+    targets.map_inplace(|item| *item = rng.gen::<MyType>());
+    charges.map_inplace(|item| *item = rng.gen::<MyType>());
+
+    c.bench_function("modified helmholtz evaluate values single precision", |b| {
+        b.iter(|| {
+            make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega).evaluate_in_place(
+                charges.view(),
+                black_box(result.view_mut()),
+                &EvalMode::Value,
+                ThreadingType::Parallel,
+            );
+        })
+    });
+}
+
+fn benchmark_modified_helmholtz_evaluate_values_and_derivs_double_precision(c: &mut Criterion) {
+    let nsources = 20000;
+    let ntargets = 20000;
+    let ncharge_vecs = 2;
+
+    type MyType = f64;
+
+    let omega = 2.5;
+
+    let mut rng = rand::thread_rng();
+
+    let mut sources = ndarray::Array2::<MyType>::zeros((3, nsources));
+    let mut targets = ndarray::Array2::<MyType>::zeros((3, ntargets));
+    let mut charges = ndarray::Array2::<MyType>::zeros((ncharge_vecs, nsources));
+    let mut result = ndarray::Array3::<MyType>::zeros((ncharge_vecs, ntargets, 4));
+
+    sources.map_inplace(|item| *item = rng.gen::<MyType>());
+    targets.map_inplace(|item| *item = rng.gen::<MyType>());
+    charges.map_inplace(|item| *item = rng.gen::<MyType>());
+
+    c.bench_function("modified helmholtz evaluate values and derivs double precision", |b| {
+        b.iter(|| {
+            make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega).evaluate_in_place(
+                charges.view(),
+                black_box(result.view_mut()),
+                &EvalMode::ValueGrad,
+                ThreadingType::Parallel,
+            );
+        })
+    });
+}
+
+fn benchmark_modified_helmholtz_evaluate_values_and_derivs_single_precision(c: &mut Criterion) {
+    let nsources = 20000;
+    let ntargets = 20000;
+    let ncharge_vecs = 2;
+
+    type MyType = f32;
+
+    let omega = 2.5;
+
+    let mut rng = rand::thread_rng();
+
+    let mut sources = ndarray::Array2::<MyType>::zeros((3, nsources));
+    let mut targets = ndarray::Array2::<MyType>::zeros((3, ntargets));
+    let mut charges = ndarray::Array2::<MyType>::zeros((ncharge_vecs, nsources));
+    let mut result = ndarray::Array3::<MyType>::zeros((ncharge_vecs, ntargets, 4));
+
+    sources.map_inplace(|item| *item = rng.gen::<MyType>());
+    targets.map_inplace(|item| *item = rng.gen::<MyType>());
+    charges.map_inplace(|item| *item = rng.gen::<MyType>());
+
+    c.bench_function("modified helmholtz evaluate values and derivs single precision", |b| {
+        b.iter(|| {
+            make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega).evaluate_in_place(
+                charges.view(),
+                black_box(result.view_mut()),
+                &EvalMode::ValueGrad,
+                ThreadingType::Parallel,
+            );
+        })
+    });
+}
+
+
+
 criterion_group! {
     name = benches;
     config = Criterion::default().sample_size(30).measurement_time(std::time::Duration::from_secs(10));
@@ -374,5 +550,13 @@ criterion_group! {
               benchmark_helmholtz_evaluate_values_single_precision,
               benchmark_helmholtz_evaluate_values_and_derivs_double_precision,
               benchmark_helmholtz_evaluate_values_and_derivs_single_precision,
+              benchmark_modified_helmholtz_assemble_single_precision,
+              benchmark_modified_helmholtz_assemble_double_precision,
+              benchmark_modified_helmholtz_evaluate_values_double_precision,
+              benchmark_modified_helmholtz_evaluate_values_single_precision,
+              benchmark_modified_helmholtz_evaluate_values_and_derivs_double_precision,
+              benchmark_modified_helmholtz_evaluate_values_and_derivs_single_precision,
+
+
             }
 criterion_main!(benches);
