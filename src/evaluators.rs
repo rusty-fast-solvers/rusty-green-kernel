@@ -32,7 +32,7 @@ pub fn make_laplace_evaluator<'a, T: RealType>(
     }
 }
 
-/// Make a Laplace evaluator by taking ownership.
+/// Make a Laplace evaluator by taking ownership of the data.
 pub fn make_laplace_evaluator_owned<T: RealType>(
     sources: Array2<T>,
     targets: Array2<T>,
@@ -57,7 +57,7 @@ pub fn make_modified_helmholtz_evaluator<'a, T: RealType>(
     }
 }
 
-/// Make a modified Helmholtz evaluator by taking ownership.
+/// Make a modified Helmholtz evaluator by taking ownership of the data.
 pub fn make_modified_helmholtz_evaluator_owned<T: RealType>(
     sources: Array2<T>,
     targets: Array2<T>,
@@ -85,7 +85,7 @@ pub fn make_helmholtz_evaluator<'a, T: RealType>(
     }
 }
 
-/// Make a Helmholtz evaluator by taking ownership.
+/// Make a Helmholtz evaluator by taking ownership of the data.
 pub fn make_helmholtz_evaluator_owned<T: RealType>(
     sources: Array2<T>,
     targets: Array2<T>,
