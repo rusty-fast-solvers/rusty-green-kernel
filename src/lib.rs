@@ -12,7 +12,7 @@
 //! * The Helmholtz kernel: $g(\mathbf{x}, \mathbf{y}) = \frac{e^{ik|\mathbf{x} - \mathbf{y}|}}{4\pi|\mathbf{x} - \mathbf{y}|}$
 //! * The modified Helmholtz kernel:$g(\mathbf{x}, \mathbf{y}) = \frac{e^{-\omega|\mathbf{x} - \mathbf{y}|}}{4\pi|\mathbf{x} - \mathbf{y}|}$
 //! 
-//! Within the libraries the $\mathbf{x}_i$ are named `targets` and the $\mathbf{y}_j$ are named `sources`. We use
+//! Within the library the $\mathbf{x}_i$ are named `targets` and the $\mathbf{y}_j$ are named `sources`. We use
 //! the convention that $g(\mathbf{x}_i, \mathbf{y}_j) := 0$, whenever $\mathbf{x}_i = \mathbf{y}_j$.
 //! 
 //! The library provides a Rust API, C API, and Python API.
@@ -52,7 +52,7 @@
 //! ```kernel_matrix = make_laplace_evaluator(sources, targets).assemble()```
 //! 
 //! To evaluate $f(\mathbf{x}_i) = \sum_jg(\mathbf{x}_i, \mathbf{y}_j)c_j$ we define the charges as `ndarray` of
-//! size `(number_of_charge_vectors, nsources)`, where `ncharge_vecs` is the number of charge vectors we want to evaluate and
+//! size `(ncharge_vecs, nsources)`, where `ncharge_vecs` is the number of charge vectors we want to evaluate and
 //! `nsources` is the number of sources. For Laplace and modified Helmholtz problems `charges` must be of type `f32`
 //! or `f64` and for Helmholtz problems it must be of type `Complex<f32>` or `Complex<f64>`.
 //! 
@@ -64,9 +64,8 @@
 //! ```
 //! 
 //! The result `potential_sum` is a real `ndarray` (for Laplace and modified Helmholtz) or a complex `ndarray` (for Helmholtz).
-//! It has the shape `(number_of_charge_vectors, number_of_targets, 1)`. Here, `number_of_charge_vectors` is 2 and
-//! `number_of_targets` is M. For `EvalMode::Value` the function only computes the values $f(\mathbf{x}_i)$. For
-//! `EvalMode::ValueGrad` the array `potential_sum` is of shape `(number_of_charge_vectors, number_of_targets, 4)` and
+//! It has the shape `(ncharge_vecs, ntargets, 1)`. For `EvalMode::Value` the function only computes the values $f(\mathbf{x}_i)$. For
+//! `EvalMode::ValueGrad` the array `potential_sum` is of shape `(ncharge_vecs, ntargets, 4)` and
 //! returns the function values and the three components of the gradient along the most-inner dimension. The value
 //! `ThreadingType::Parallel` specifies that the evaluation is multithreaded. For this the Rayon library is used. For the
 //! value `ThreadingType::Serial` the code is executed single-threaded. The enum `ThreadingType` is defined in the

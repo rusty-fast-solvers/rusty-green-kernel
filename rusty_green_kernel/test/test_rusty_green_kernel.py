@@ -462,3 +462,79 @@ def test_modified_helmholtz_evaluate_values_and_deriv(dtype, rtol, parallel):
     expected = np.tensordot(charges, expected, 1)
 
     np.testing.assert_allclose(actual, expected, rtol=rtol)
+
+def test_laplace_derivative_is_correct():
+    """Test that the Gradient of the Laplace kernel is correct."""
+    from rusty_green_kernel import evaluate_laplace_kernel
+
+    nsources = 10
+
+    eps = 1E-10
+
+    dtype = np.float64
+
+    targets = np.array([[1.1, 1.5, 2.3],
+                        [1.1 + eps, 1.5, 2.3],
+                        [1.1 - eps, 1.5, 2.3],
+                        [1.1, 1.5 + eps, 2.3],
+                        [1.1, 1.5 - eps, 2.3],
+                        [1.1, 1.5, 2.3 + eps],
+                        [1.1, 1.5, 2.3 - eps]]).T
+
+    rng = np.random.default_rng(seed=0)
+
+    sources = rng.random((3, nsources), dtype=dtype)
+    charges = rng.random((1, nsources), dtype=dtype)
+
+    # Evalute derivative approximately.
+
+    values = evaluate_laplace_kernel(sources, targets, charges)
+
+    x_deriv = (values[0, 1, 0] - values[0, 2, 0]) / (2 * eps)
+    y_deriv = (values[0, 3, 0] - values[0, 4, 0]) / (2 * eps)
+    z_deriv = (values[0, 5, 0] - values[0, 6, 0]) / (2 * eps)
+
+    expected = np.array([x_deriv, y_deriv, z_deriv])
+
+    actual = evaluate_laplace_kernel(sources, targets, charges, return_gradients=True)[0, 0, 1:]
+
+    np.testing.assert_allclose(actual, expected, rtol=1E-5)
+
+def test_helmholtz_derivative_is_correct():
+    """Test that the Gradient of the Helmholtz kernel is correct."""
+    from rusty_green_kernel import evaluate_helmholtz_kernel
+
+    nsources = 10
+
+    wavenumber = 1.5 + .2j
+
+    eps = 1E-10
+
+    dtype = np.float64
+
+    targets = np.array([[1.1, 1.5, 2.3],
+                        [1.1 + eps, 1.5, 2.3],
+                        [1.1 - eps, 1.5, 2.3],
+                        [1.1, 1.5 + eps, 2.3],
+                        [1.1, 1.5 - eps, 2.3],
+                        [1.1, 1.5, 2.3 + eps],
+                        [1.1, 1.5, 2.3 - eps]]).T
+
+    rng = np.random.default_rng(seed=0)
+
+    sources = rng.random((3, nsources), dtype=dtype)
+    charges = rng.random((1, nsources), dtype=dtype)
+
+    # Evalute derivative approximately.
+
+    values = evaluate_helmholtz_kernel(sources, targets, charges, wavenumber)
+
+    x_deriv = (values[0, 1, 0] - values[0, 2, 0]) / (2 * eps)
+    y_deriv = (values[0, 3, 0] - values[0, 4, 0]) / (2 * eps)
+    z_deriv = (values[0, 5, 0] - values[0, 6, 0]) / (2 * eps)
+
+    expected = np.array([x_deriv, y_deriv, z_deriv])
+
+    actual = evaluate_helmholtz_kernel(sources, targets, charges, wavenumber, return_gradients=True)[0, 0, 1:]
+
+    np.testing.assert_allclose(actual, expected, rtol=1E-5)

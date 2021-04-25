@@ -3,12 +3,15 @@ use ndarray::{Array1, ArrayView1, ArrayView2, ArrayViewMut2, Axis};
 use num;
 use rusty_kernel_tools::RealType;
 
+/// This enum defines the Evaluation Mode.
 pub enum EvalMode {
+    /// Only evaluate Green's function values.
     Value,
+    /// Evaluate values and derivatives.
     ValueGrad,
 }
 
-/// Returns the evaluation of the Laplace kernel for
+/// Evaluation of the Laplace kernel for
 /// a single target and many sources. 
 /// 
 /// The type T is either f32 or f64.
@@ -35,7 +38,7 @@ pub fn laplace_kernel<T: RealType>(
     };
 }
 
-/// Implementation of the Laplace kernel without derivatives
+/// Implementation of the Laplace kernel without derivatives.
 pub fn laplace_kernel_impl_no_deriv<T: RealType>(
     target: ArrayView1<T>,
     sources: ArrayView2<T>,
@@ -70,7 +73,7 @@ pub fn laplace_kernel_impl_no_deriv<T: RealType>(
         .for_each(|item| *item = zero);
 }
 
-/// Implementation of the Laplace kernel with derivatives
+/// Implementation of the Laplace kernel with derivatives.
 pub fn laplace_kernel_impl_deriv<T: RealType>(
     target: ArrayView1<T>,
     sources: ArrayView2<T>,
@@ -126,7 +129,25 @@ pub fn laplace_kernel_impl_deriv<T: RealType>(
         });
 }
 
-/// Implementation of the Helmholtz kernel
+/// Evaluation of the Helmholtz kernel for
+/// a single target and many sources. 
+/// 
+/// The type T is either f32 or f64.
+/// 
+/// # Arguments
+/// 
+/// * `target` - An array with 3 elements containing the target point.
+/// * `sources` - An array of shape (3, nsources) cotaining the source points.
+/// * `result_real` - If eval_mode is equal to `Value` an array of shape (1, nsources)
+///                   that contains the real part of the Green's function values between the target
+///                   and the sources.
+/// * `result__imag` - If eval_mode is equal to `Value` an array of shape (1, nsources)
+///                   that contains the imaginary part of the Green's function values between the target
+///                   and the sources.
+/// * `wavenumber`   - The wavenumber k of the Helmholtz kernel.
+/// * `eval_mode` - The Evaluation Mode. Either `Value` if only the values of the Green's
+///                 function are requested, or `ValueGrad` if both the value and derivatives
+///                 are requested.
 pub fn helmholtz_kernel<T: RealType>(
     target: ArrayView1<T>,
     sources: ArrayView2<T>,
@@ -145,6 +166,7 @@ pub fn helmholtz_kernel<T: RealType>(
     };
 }
 
+/// Implementation of the Helmholtz kernel with derivatives.
 pub fn helmholtz_kernel_impl_no_deriv<T: RealType>(
     target: ArrayView1<T>,
     sources: ArrayView2<T>,
@@ -199,6 +221,7 @@ pub fn helmholtz_kernel_impl_no_deriv<T: RealType>(
         });
 }
 
+/// Implementation of the Helmholtz kernel with derivatives.
 pub fn helmholtz_kernel_impl_deriv<T: RealType>(
     target: ArrayView1<T>,
     sources: ArrayView2<T>,
@@ -295,6 +318,22 @@ pub fn helmholtz_kernel_impl_deriv<T: RealType>(
         });
 }
 
+/// Evaluation of the modified Helmholtz kernel for
+/// a single target and many sources. 
+/// 
+/// The type T is either f32 or f64.
+/// 
+/// # Arguments
+/// 
+/// * `target` - An array with 3 elements containing the target point.
+/// * `sources` - An array of shape (3, nsources) cotaining the source points.
+/// * `result` - If eval_mode is equal to `Value` an array of shape (1, nsources)
+///              that contains the values of the Green's function between the target
+///              and the sources.
+/// * `omega` - The omega parameter of the modified Helmholtz kernel.
+/// * `eval_mode` - The Evaluation Mode. Either `Value` if only the values of the Green's
+///                 function are requested, or `ValueGrad` if both the value and derivatives
+///                 are requested.
 pub fn modified_helmholtz_kernel<T: RealType>(
     target: ArrayView1<T>,
     sources: ArrayView2<T>,
@@ -308,7 +347,7 @@ pub fn modified_helmholtz_kernel<T: RealType>(
     };
 }
 
-/// Implementation of the Laplace kernel without derivatives
+/// Implementation of the modified Helmholtz kernel without derivatives.
 pub fn modified_helmholtz_kernel_impl_no_deriv<T: RealType>(
     target: ArrayView1<T>,
     sources: ArrayView2<T>,
@@ -350,7 +389,7 @@ pub fn modified_helmholtz_kernel_impl_no_deriv<T: RealType>(
         .for_each(|item| *item = zero);
 }
 
-/// Implementation of the Laplace kernel with derivatives
+/// Implementation of the modified Helmholtz kernel with derivatives.
 pub fn modified_helmholtz_kernel_impl_deriv<T: RealType>(
     target: ArrayView1<T>,
     sources: ArrayView2<T>,

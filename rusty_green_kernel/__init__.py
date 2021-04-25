@@ -31,13 +31,14 @@ can be evaluated.
 import numpy as np
 from .rusty_green_kernel import ffi, lib
 
-__all__ = ['assemble_laplace_kernel',
-           'evaluate_laplace_kernel',
-           'assemble_helmholtz_kernel',
-           'evaluate_helmholtz_kernel',
-           'assemble_modified_helmholtz_kernel',
-           'evaluate_modified_helmholtz_kernel'
-           ]
+__all__ = [
+    "assemble_laplace_kernel",
+    "evaluate_laplace_kernel",
+    "assemble_helmholtz_kernel",
+    "evaluate_helmholtz_kernel",
+    "assemble_modified_helmholtz_kernel",
+    "evaluate_modified_helmholtz_kernel",
+]
 
 
 def as_double_ptr(arr):
@@ -54,13 +55,16 @@ def as_usize(num):
     """Cast number to usize."""
     return ffi.cast("unsigned long", num)
 
+
 def as_double(num):
     """Cast number to double."""
     return ffi.cast("double", num)
 
+
 def as_float(num):
     """Cast number to float."""
     return ffi.cat("float", num)
+
 
 def align_data(arr, dtype=None):
     """Make sure that an array has the right properties."""
@@ -74,9 +78,9 @@ def align_data(arr, dtype=None):
 def assemble_laplace_kernel(sources, targets, dtype=np.float64, parallel=True):
     """
     Assemble the Laplace kernel matrix for many targets and sources.
-    
+
     Returns the Laplace kernel matrix for the Green's function
-    
+
     g(x, y) = 1 / (4 pi * | x - y |)
 
     Parameters
@@ -99,7 +103,7 @@ def assemble_laplace_kernel(sources, targets, dtype=np.float64, parallel=True):
     A kernel matrix A, such that A[i, j] is the interaction of the
     jth source point with the ith target point using the Laplace Green's
     function.
-    
+
     """
 
     if dtype not in [np.float64, np.float32]:
@@ -154,13 +158,13 @@ def evaluate_laplace_kernel(
 ):
     """
     Evaluate a potential sum for the Laplace kernel.
-    
+
     Returns the potential sum
 
     f(x_i) = sum_j g(x_i, y_j) c_j
 
     for the Laplace kernel
-    
+
     g(x, y) = 1 / (4 pi * | x - y |)
 
     Parameters
@@ -191,7 +195,7 @@ def evaluate_laplace_kernel(
     A[i, j, 0] is the value of the charge potential sum for the ith charge
     vector at the jth target. The values A[i, j, 1:] is the associated
     gradient with respect to the target.
-    
+
     """
 
     if dtype not in [np.float64, np.float32]:
@@ -224,11 +228,10 @@ def evaluate_laplace_kernel(
 
     if charges.ndim == 1:
         ncharge_vecs = 1
-        result = np.empty((ntargets, ncols), dtype=dtype)
-
     else:
         ncharge_vecs = charges.shape[0]
-        result = np.empty((ncharge_vecs, ntargets, ncols), dtype=dtype)
+
+    result = np.empty((ncharge_vecs, ntargets, ncols), dtype=dtype)
 
     targets = align_data(targets, dtype=dtype)
     sources = align_data(sources, dtype=dtype)
@@ -269,9 +272,9 @@ def assemble_helmholtz_kernel(
 ):
     """
     Assemble the Helmholtz kernel matrix for many targets and sources.
-    
+
     Returns the Helmholtz kernel matrix for the Green's function
-    
+
     g(x, y) = exp(1j * k * | x- y| ) / (4 pi * | x - y |)
 
     Parameters
@@ -296,7 +299,7 @@ def assemble_helmholtz_kernel(
     A kernel matrix A, such that A[i, j] is the interaction of the
     jth source point with the ith target point using the Helmholtz Green's
     function.
-    
+
     """
 
     if dtype not in [np.complex128, np.complex64]:
@@ -370,13 +373,13 @@ def evaluate_helmholtz_kernel(
 ):
     """
     Evaluate a potential sum for the Helmholtz kernel.
-    
+
     Returns the potential sum
 
     f(x_i) = sum_j g(x_i, y_j) c_j
 
     for the Helmholtz kernel
-    
+
     g(x, y) = exp( 1j * k * | x - y | ) / (4 pi * | x - y |)
 
     Parameters
@@ -409,7 +412,7 @@ def evaluate_helmholtz_kernel(
     A[i, j, 0] is the value of the charge potential sum for the ith charge
     vector at the jth target. The values A[i, j, 1:] is the associated
     gradient with respect to the target.
-    
+
     """
 
     if dtype not in [np.complex128, np.complex64]:
@@ -439,7 +442,6 @@ def evaluate_helmholtz_kernel(
     else:
         raise ValueError(f"Unsupported type: {dtype}.")
 
-
     nsources = sources.shape[1]
     ntargets = targets.shape[1]
 
@@ -450,11 +452,10 @@ def evaluate_helmholtz_kernel(
 
     if charges.ndim == 1:
         ncharge_vecs = 1
-        result_buffer = np.empty(2 * ntargets * ncols, dtype=real_type)
-
     else:
         ncharge_vecs = charges.shape[0]
-        result_buffer = np.empty(2 * ntargets * ncols * ncharge_vecs, dtype=real_type)
+
+    result = np.empty((ncharge_vecs, ntargets, ncols), dtype=dtype)
 
     targets = align_data(targets, dtype=real_type)
     sources = align_data(sources, dtype=real_type)
@@ -467,7 +468,7 @@ def evaluate_helmholtz_kernel(
             as_float_ptr(sources),
             as_float_ptr(targets),
             as_float_ptr(charge_buffer),
-            as_float_ptr(result_buffer),
+            as_float_ptr(result),
             as_double(np.real(wavenumber)),
             as_double(np.imag(wavenumber)),
             as_usize(nsources),
@@ -481,7 +482,7 @@ def evaluate_helmholtz_kernel(
             as_double_ptr(sources),
             as_double_ptr(targets),
             as_double_ptr(charge_buffer),
-            as_double_ptr(result_buffer),
+            as_double_ptr(result),
             as_double(np.real(wavenumber)),
             as_double(np.imag(wavenumber)),
             as_usize(nsources),
@@ -493,19 +494,17 @@ def evaluate_helmholtz_kernel(
     else:
         raise NotImplementedError
 
-    if charges.ndim == 1:
-        return np.frombuffer(result_buffer, dtype=dtype).reshape(ntargets, ncols)
-    else:
-        return np.frombuffer(result_buffer, dtype=dtype).reshape(
-            ncharge_vecs, ntargets, ncols
-        )
+    return np.frombuffer(result, dtype=dtype).reshape(ncharge_vecs, ntargets, ncols)
 
-def assemble_modified_helmholtz_kernel(sources, targets, omega, dtype=np.float64, parallel=True):
+
+def assemble_modified_helmholtz_kernel(
+    sources, targets, omega, dtype=np.float64, parallel=True
+):
     """
     Assemble the modified Helmholtz kernel matrix for many targets and sources.
-    
+
     Returns the modified Helmholtz kernel matrix for the Green's function
-    
+
     g(x, y) = exp( -omega * | x- y | ) / (4 pi * | x - y |)
 
     Parameters
@@ -530,7 +529,7 @@ def assemble_modified_helmholtz_kernel(sources, targets, omega, dtype=np.float64
     A kernel matrix A, such that A[i, j] is the interaction of the
     jth source point with the ith target point using the modified Helmholtz Green's
     function.
-    
+
     """
 
     if dtype not in [np.float64, np.float32]:
@@ -583,17 +582,23 @@ def assemble_modified_helmholtz_kernel(sources, targets, omega, dtype=np.float64
 
 
 def evaluate_modified_helmholtz_kernel(
-    sources, targets, charges, omega, dtype=np.float64, parallel=True, return_gradients=False
+    sources,
+    targets,
+    charges,
+    omega,
+    dtype=np.float64,
+    parallel=True,
+    return_gradients=False,
 ):
     """
     Evaluate a potential sum for the modified Helmholtz kernel.
-    
+
     Returns the potential sum
 
     f(x_i) = sum_j g(x_i, y_j) c_j
 
     for the modified Helmholtz kernel
-    
+
     g(x, y) = exp( -omega * | x - y | ) / (4 pi * | x - y |)
 
     Parameters
@@ -626,7 +631,7 @@ def evaluate_modified_helmholtz_kernel(
     A[i, j, 0] is the value of the charge potential sum for the ith charge
     vector at the jth target. The values A[i, j, 1:] is the associated
     gradient with respect to the target.
-    
+
     """
 
     if dtype not in [np.float64, np.float32]:
@@ -659,11 +664,10 @@ def evaluate_modified_helmholtz_kernel(
 
     if charges.ndim == 1:
         ncharge_vecs = 1
-        result = np.empty((ntargets, ncols), dtype=dtype)
-
     else:
         ncharge_vecs = charges.shape[0]
-        result = np.empty((ncharge_vecs, ntargets, ncols), dtype=dtype)
+
+    result = np.empty((ncharge_vecs, ntargets, ncols), dtype=dtype)
 
     targets = align_data(targets, dtype=dtype)
     sources = align_data(sources, dtype=dtype)

@@ -1,3 +1,5 @@
+//! This module defines C API function to access all assembly and evaluation routines.
+
 use ndarray;
 use num::complex::Complex;
 use rusty_kernel_tools::ThreadingType;
@@ -8,6 +10,17 @@ use crate::make_laplace_evaluator;
 use crate::make_helmholtz_evaluator;
 use crate::make_modified_helmholtz_evaluator;
 
+/// Assemble the Laplace kernel (double precision version).
+/// 
+/// 
+/// # Arguments
+/// 
+/// * `source_ptr` - Pointer to a `(3, nsources)` array of sources.
+/// * `target_ptr` - Pointer to a `(3, ntargets)` array of targets.
+/// * `result_ptr` - Pointer to an existing `(ntargets, nsources)` array that stores the result.
+/// * `nsources`   - Number of sources.
+/// * `ntargets`   - Number of targets.
+/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
 #[no_mangle]
 pub extern "C" fn assemble_laplace_kernel_f64(
     source_ptr: *const f64,
@@ -31,6 +44,17 @@ pub extern "C" fn assemble_laplace_kernel_f64(
     make_laplace_evaluator(sources, targets).assemble_in_place(result, threading_type);
 }
 
+/// Assemble the Laplace kernel (single precision version).
+/// 
+/// 
+/// # Arguments
+/// 
+/// * `source_ptr` - Pointer to a `(3, nsources)` array of sources.
+/// * `target_ptr` - Pointer to a `(3, ntargets)` array of targets.
+/// * `result_ptr` - Pointer to an existing `(ntargets, nsources)` array that stores the result.
+/// * `nsources`   - Number of sources.
+/// * `ntargets`   - Number of targets.
+/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
 #[no_mangle]
 pub extern "C" fn assemble_laplace_kernel_f32(
     source_ptr: *const f32,
@@ -53,7 +77,21 @@ pub extern "C" fn assemble_laplace_kernel_f32(
 
     make_laplace_evaluator(sources, targets).assemble_in_place(result, threading_type);
 }
-
+/// Evaluate the Laplace potential sum (double precision version).
+/// 
+/// 
+/// # Arguments
+/// 
+/// * `source_ptr` - Pointer to a `(3, nsources)` array of sources.
+/// * `target_ptr` - Pointer to a `(3, ntargets)` array of targets.
+/// * `charge_ptr` - Pointer to a `(ncharge_vecs, nsources)` array of `ncharge_vecs` charge vectors.
+/// * `result_ptr` - Pointer to an existing `(ncharge_vecs, ntargets, 1)` array (if `return_gradients is false)
+///                  or to an `(ncharge_vecs, ntargets, 4) array (if `return_gradients is true) that stores the result.
+/// * `nsources`   - Number of sources.
+/// * `ntargets`   - Number of targets.
+/// * `ncharge_vecs` - Number of charge vectors.
+/// * `return_gradients` - If true return also the gradients.
+/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
 #[no_mangle]
 pub extern "C" fn evaluate_laplace_kernel_f64(
     source_ptr: *const f64,
@@ -99,6 +137,21 @@ pub extern "C" fn evaluate_laplace_kernel_f64(
     );
 }
 
+/// Evaluate the Laplace potential sum (single precision version).
+/// 
+/// 
+/// # Arguments
+/// 
+/// * `source_ptr` - Pointer to a `(3, nsources)` array of sources.
+/// * `target_ptr` - Pointer to a `(3, ntargets)` array of targets.
+/// * `charge_ptr` - Pointer to a `(ncharge_vecs, nsources)` array of `ncharge_vecs` charge vectors.
+/// * `result_ptr` - Pointer to an existing `(ncharge_vecs, ntargets, 1)` array (if `return_gradients is false)
+///                  or to an `(ncharge_vecs, ntargets, 4) array (if `return_gradients is true) that stores the result.
+/// * `nsources`   - Number of sources.
+/// * `ntargets`   - Number of targets.
+/// * `ncharge_vecs` - Number of charge vectors.
+/// * `return_gradients` - If true return also the gradients.
+/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
 #[no_mangle]
 pub extern "C" fn evaluate_laplace_kernel_f32(
     source_ptr: *const f32,
@@ -144,6 +197,20 @@ pub extern "C" fn evaluate_laplace_kernel_f32(
     );
 }
 
+/// Assemble the Helmholtz kernel (double precision version).
+/// 
+/// 
+/// # Arguments
+/// 
+/// * `source_ptr` - Pointer to a `(3, nsources)` array of sources.
+/// * `target_ptr` - Pointer to a `(3, ntargets)` array of targets.
+/// * `result_ptr` - Pointer to an existing `(ntargets,  2 * nsources)` array that stores the result
+///                  using a complex number memory layout.
+/// * `wavenumber_real` - Real part of the wavenumber parameter.
+/// * `wavenumber_imag` - Imaginary part of the wavenumber parameter.
+/// * `nsources`   - Number of sources.
+/// * `ntargets`   - Number of targets.
+/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
 #[no_mangle]
 pub extern "C" fn assemble_helmholtz_kernel_f64(
     source_ptr: *const f64,
@@ -175,6 +242,20 @@ pub extern "C" fn assemble_helmholtz_kernel_f64(
         .assemble_in_place(result, threading_type);
 }
 
+/// Assemble the Helmholtz kernel (single precision version).
+/// 
+/// 
+/// # Arguments
+/// 
+/// * `source_ptr` - Pointer to a `(3, nsources)` array of sources.
+/// * `target_ptr` - Pointer to a `(3, ntargets)` array of targets.
+/// * `result_ptr` - Pointer to an existing `(ntargets, 2 * nsources)` array that stores the result
+///                  using a complex number memory layout.
+/// * `wavenumber_real` - Real part of the wavenumber parameter.
+/// * `wavenumber_imag` - Imaginary part of the wavenumber parameter.
+/// * `nsources`   - Number of sources.
+/// * `ntargets`   - Number of targets.
+/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
 #[no_mangle]
 pub extern "C" fn assemble_helmholtz_kernel_f32(
     source_ptr: *const f32,
@@ -206,6 +287,24 @@ pub extern "C" fn assemble_helmholtz_kernel_f32(
         .assemble_in_place(result, threading_type);
 }
 
+/// Evaluate the Helmholtz potential sum (double precision version).
+/// 
+/// 
+/// # Arguments
+/// 
+/// * `source_ptr` - Pointer to a `(3, nsources)` array of sources.
+/// * `target_ptr` - Pointer to a `(3, ntargets)` array of targets.
+/// * `charge_ptr` - Pointer to a `(ncharge_vecs, nsources)` array of `ncharge_vecs` charge vectors.
+/// * `result_ptr` - Pointer to an existing `(ncharge_vecs, ntargets, 2)` array (if `return_gradients is false)
+///                  or to an `(ncharge_vecs, ntargets, 2 * 4) array (if `return_gradients is true) that stores the result
+///                  using a complex number memory layout.
+/// * `wavenumber_real` - Real part of the wavenumber parameter.
+/// * `wavenumber_imag` - Imaginary part of the wavenumber parameter.
+/// * `nsources`   - Number of sources.
+/// * `ntargets`   - Number of targets.
+/// * `ncharge_vecs` - Number of charge vectors.
+/// * `return_gradients` - If true return also the gradients.
+/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
 #[no_mangle]
 pub extern "C" fn evaluate_helmholtz_kernel_f64(
     source_ptr: *const f64,
@@ -262,6 +361,24 @@ pub extern "C" fn evaluate_helmholtz_kernel_f64(
     );
 }
 
+/// Evaluate the Helmholtz potential sum (single precision version).
+/// 
+/// 
+/// # Arguments
+/// 
+/// * `source_ptr` - Pointer to a `(3, nsources)` array of sources.
+/// * `target_ptr` - Pointer to a `(3, ntargets)` array of targets.
+/// * `charge_ptr` - Pointer to a `(ncharge_vecs, nsources)` array of `ncharge_vecs` charge vectors.
+/// * `result_ptr` - Pointer to an existing `(ncharge_vecs, ntargets, 2)` array (if `return_gradients is false)
+///                  or to an `(ncharge_vecs, ntargets, 2 * 4) array (if `return_gradients is true) that stores the result
+///                  using a complex number memory layout.
+/// * `wavenumber_real` - Real part of the wavenumber parameter.
+/// * `wavenumber_imag` - Imaginary part of the wavenumber parameter.
+/// * `nsources`   - Number of sources.
+/// * `ntargets`   - Number of targets.
+/// * `ncharge_vecs` - Number of charge vectors.
+/// * `return_gradients` - If true return also the gradients.
+/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
 #[no_mangle]
 pub extern "C" fn evaluate_helmholtz_kernel_f32(
     source_ptr: *const f32,
@@ -317,6 +434,18 @@ pub extern "C" fn evaluate_helmholtz_kernel_f32(
     );
 }
 
+/// Assemble the modified Helmholtz kernel (double precision version).
+/// 
+/// 
+/// # Arguments
+/// 
+/// * `source_ptr` - Pointer to a `(3, nsources)` array of sources.
+/// * `target_ptr` - Pointer to a `(3, ntargets)` array of targets.
+/// * `result_ptr` - Pointer to an existing `(ntargets, nsources)` array that stores the result.
+/// * `omega`      - The omega parameter of the kernel.
+/// * `nsources`   - Number of sources.
+/// * `ntargets`   - Number of targets.
+/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
 #[no_mangle]
 pub extern "C" fn assemble_modified_helmholtz_kernel_f64(
     source_ptr: *const f64,
@@ -341,6 +470,18 @@ pub extern "C" fn assemble_modified_helmholtz_kernel_f64(
     make_modified_helmholtz_evaluator(sources, targets, omega).assemble_in_place(result, threading_type);
 }
 
+/// Assemble the modified Helmholtz kernel (single precision version).
+/// 
+/// 
+/// # Arguments
+/// 
+/// * `source_ptr` - Pointer to a `(3, nsources)` array of sources.
+/// * `target_ptr` - Pointer to a `(3, ntargets)` array of targets.
+/// * `result_ptr` - Pointer to an existing `(ntargets, nsources)` array that stores the result.
+/// * `omega`      - The omega parameter of the kernel.
+/// * `nsources`   - Number of sources.
+/// * `ntargets`   - Number of targets.
+/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
 #[no_mangle]
 pub extern "C" fn assemble_modified_helmholtz_kernel_f32(
     source_ptr: *const f32,
@@ -365,6 +506,22 @@ pub extern "C" fn assemble_modified_helmholtz_kernel_f32(
     make_modified_helmholtz_evaluator(sources, targets, omega).assemble_in_place(result, threading_type);
 }
 
+/// Evaluate the modified Helmholtz potential sum (double precision version).
+/// 
+/// 
+/// # Arguments
+/// 
+/// * `source_ptr` - Pointer to a `(3, nsources)` array of sources.
+/// * `target_ptr` - Pointer to a `(3, ntargets)` array of targets.
+/// * `charge_ptr` - Pointer to a `(ncharge_vecs, nsources)` array of `ncharge_vecs` charge vectors.
+/// * `result_ptr` - Pointer to an existing `(ncharge_vecs, ntargets, 1)` array (if `return_gradients is false)
+///                  or to an `(ncharge_vecs, ntargets, 4) array (if `return_gradients is true) that stores the result.
+/// * `omega`      - The omega parameter of the kernel.
+/// * `nsources`   - Number of sources.
+/// * `ntargets`   - Number of targets.
+/// * `ncharge_vecs` - Number of charge vectors.
+/// * `return_gradients` - If true return also the gradients.
+/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
 #[no_mangle]
 pub extern "C" fn evaluate_modified_helmholtz_kernel_f64(
     source_ptr: *const f64,
@@ -411,6 +568,22 @@ pub extern "C" fn evaluate_modified_helmholtz_kernel_f64(
     );
 }
 
+/// Evaluate the modified Helmholtz potential sum (single precision version).
+/// 
+/// 
+/// # Arguments
+/// 
+/// * `source_ptr` - Pointer to a `(3, nsources)` array of sources.
+/// * `target_ptr` - Pointer to a `(3, ntargets)` array of targets.
+/// * `charge_ptr` - Pointer to a `(ncharge_vecs, nsources)` array of `ncharge_vecs` charge vectors.
+/// * `result_ptr` - Pointer to an existing `(ncharge_vecs, ntargets, 1)` array (if `return_gradients is false)
+///                  or to an `(ncharge_vecs, ntargets, 4) array (if `return_gradients is true) that stores the result.
+/// * `omega`      - The omega parameter of the kernel.
+/// * `nsources`   - Number of sources.
+/// * `ntargets`   - Number of targets.
+/// * `ncharge_vecs` - Number of charge vectors.
+/// * `return_gradients` - If true return also the gradients.
+/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
 #[no_mangle]
 pub extern "C" fn evaluate_modified_helmholtz_kernel_f32(
     source_ptr: *const f32,

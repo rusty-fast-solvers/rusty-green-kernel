@@ -18,6 +18,8 @@ pub struct DirectEvaluator<P: ParticleContainerAccessor, R> {
     pub(crate) _marker: std::marker::PhantomData<R>,
 }
 
+/// Basic access to the data that defines a Greens function kernel,
+/// its sources and targets.
 pub trait DirectEvaluatorAccessor {
     type FloatingPointType: RealType;
 
@@ -36,15 +38,37 @@ pub trait DirectEvaluatorAccessor {
     fn ntargets(&self) -> usize;
 }
 
+/// Assemblers and evaluators for real kernels.
 pub trait RealDirectEvaluator: DirectEvaluatorAccessor {
     /// Assemble the kernel matrix in-place.
+    /// 
+    /// # Arguments
+    /// * `result` - A real array of dimension `(ntargets, nsources)`
+    ///              that contains the Green's function evaluations between
+    ///              sources and targets. Note. The array must already have the right shape upon
+    ///              calling the function.
+    /// * `threading_type` - Determines whether the routine should use multithreading
+    ///                      `ThreadingType::Parallel` or serial exectution `ThreadingType::Serial`.
     fn assemble_in_place(
         &self,
         result: ArrayViewMut2<Self::FloatingPointType>,
         threading_type: ThreadingType,
     );
 
-    /// Evaluate for a set of charges in-pace.
+    /// Evaluate for each target the potential sum across all sources with given charges.
+    /// 
+    /// # Arguments
+    /// * `charges` - A real array of dimension `(ncharge_vecs, nsources)` that contains
+    ///               `ncharge_vec` vectors of charges in the rows, each of which has `nsources` entries.
+    /// * `result` - A real array of shape `(ncharge_vecs, ntargets, 1)` if only Greens fct. values are
+    ///              requested or  of shape `(ncharge_vecs, ntargets, 4)` if function values and gradients
+    ///              are requested. The value `result[i][j][0]` contains the potential sum evaluated at
+    ///              the jth target, using the ith charge vector. The values `result[i][j][k]` for k=1,..,3
+    ///              contain the corresponding gradient in the x, y, and z coordinate direction.
+    /// `eval_mode` - Either [`EvalMode::Value`] to only return function values or [`EvalMode::ValueGrad`] to return
+    ///               function values and derivatives.
+    /// * `threading_type` - Either `ThreadingType::Parallel` for parallel execution or `ThreadingType::Serial` for
+    ///                      serial execution. The enum `ThreadingType` is defined in the package `rusty-kernel-tools`.
     fn evaluate_in_place(
         &self,
         charges: ArrayView2<Self::FloatingPointType>,
@@ -53,10 +77,10 @@ pub trait RealDirectEvaluator: DirectEvaluatorAccessor {
         threading_type: ThreadingType,
     );
 
-    /// Assemble the kernel matrix and return it.
+    /// Like `assemble_in_place`, but creates and returns a new result array.
     fn assemble(&self, threading_type: ThreadingType) -> Array2<Self::FloatingPointType>;
 
-    /// Evaluate the kernel for a set of charges.
+    /// Like `evaluate_in_place` but creates and returns a new result array.
     fn evaluate(
         &self,
         charges: ArrayView2<Self::FloatingPointType>,
@@ -65,15 +89,37 @@ pub trait RealDirectEvaluator: DirectEvaluatorAccessor {
     ) -> Array3<Self::FloatingPointType>;
 }
 
+/// Assemblers and evaluators for complex kernels.
 pub trait ComplexDirectEvaluator: DirectEvaluatorAccessor {
-    /// Assemble the kernel matrix in-place
+    /// Assemble the kernel matrix in-place.
+    /// 
+    /// # Arguments
+    /// * `result` - A complex array of dimension `(ntargets, nsources)`
+    ///              that contains the Green's function evaluations between
+    ///              sources and targets. Note. The array must already have the right shape upon
+    ///              calling the function.
+    /// * `threading_type` - Determines whether the routine should use multithreading
+    ///                      `ThreadingType::Parallel` or serial exectution `ThreadingType::Serial`.
     fn assemble_in_place(
         &self,
         result: ArrayViewMut2<num::complex::Complex<Self::FloatingPointType>>,
         threading_type: ThreadingType,
     );
 
-    /// Evaluate for a set of charges in-pace.
+    /// Evaluate for each target the potential sum across all sources with given charges.
+    /// 
+    /// # Arguments
+    /// * `charges` - A complex array of dimension `(ncharge_vecs, nsources)` that contains
+    ///               `ncharge_vec` vectors of charges in the rows, each of which has `nsources` entries.
+    /// * `result` - A complex array of shape `(ncharge_vecs, ntargets, 1)` if only Greens fct. values are
+    ///              requested or  of shape `(ncharge_vecs, ntargets, 4)` if function values and gradients
+    ///              are requested. The value `result[i][j][0]` contains the potential sum evaluated at
+    ///              the jth target, using the ith charge vector. The values `result[i][j][k]` for k=1,..,3
+    ///              contain the corresponding gradient in the x, y, and z coordinate direction.
+    /// `eval_mode` - Either [`EvalMode::Value`] to only return function values or [`EvalMode::ValueGrad`] to return
+    ///               function values and derivatives.
+    /// * `threading_type` - Either `ThreadingType::Parallel` for parallel execution or `ThreadingType::Serial` for
+    ///                      serial execution. The enum `ThreadingType` is defined in the package `rusty-kernel-tools`.
     fn evaluate_in_place(
         &self,
         charges: ArrayView2<Complex<Self::FloatingPointType>>,
@@ -82,13 +128,13 @@ pub trait ComplexDirectEvaluator: DirectEvaluatorAccessor {
         threading_type: ThreadingType,
     );
 
-    /// Assemble the kernel matrix and return it
+    /// Like `assemble_in_place`, but creates and returns a new result array.
     fn assemble(
         &self,
         threading_type: ThreadingType,
     ) -> Array2<num::complex::Complex<Self::FloatingPointType>>;
 
-    /// Evaluate the kernel for a set of charges.
+    /// Like `evaluate_in_place` but creates and returns a new result array.
     fn evaluate(
         &self,
         charges: ArrayView2<Complex<Self::FloatingPointType>>,
@@ -100,21 +146,18 @@ pub trait ComplexDirectEvaluator: DirectEvaluatorAccessor {
 impl<P: ParticleContainerAccessor, R> DirectEvaluatorAccessor for DirectEvaluator<P, R> {
     type FloatingPointType = P::FloatingPointType;
 
-    /// Get the kernel definition.
     fn kernel_type(&self) -> &KernelType {
         &self.kernel_type
     }
 
-    /// Return a non-owning representation of the sources.
     fn sources(&self) -> ArrayView2<Self::FloatingPointType> {
         self.particle_container.sources()
     }
-    /// Return a non-owning representation of the targets.
+
     fn targets(&self) -> ArrayView2<Self::FloatingPointType> {
         self.particle_container.targets()
     }
 
-    // Return number of sources.
     fn nsources(&self) -> usize {
         self.sources().len_of(Axis(1))
     }
@@ -127,7 +170,6 @@ impl<P: ParticleContainerAccessor, R> DirectEvaluatorAccessor for DirectEvaluato
 impl<P: ParticleContainerAccessor> RealDirectEvaluator
     for DirectEvaluator<P, P::FloatingPointType>
 {
-    /// Assemble the kernel matrix in-place
     fn assemble_in_place(
         &self,
         result: ArrayViewMut2<Self::FloatingPointType>,
@@ -153,7 +195,6 @@ impl<P: ParticleContainerAccessor> RealDirectEvaluator
         }
     }
 
-    /// Assemble the kernel matrix and return it
     fn assemble(&self, threading_type: ThreadingType) -> Array2<Self::FloatingPointType> {
         let mut result =
             Array2::<Self::FloatingPointType>::zeros((self.ntargets(), self.nsources()));
@@ -162,7 +203,6 @@ impl<P: ParticleContainerAccessor> RealDirectEvaluator
         result
     }
 
-    /// Evaluate for a set of charges in-pace.
     fn evaluate_in_place(
         &self,
         charges: ArrayView2<Self::FloatingPointType>,
@@ -194,7 +234,7 @@ impl<P: ParticleContainerAccessor> RealDirectEvaluator
             _ => panic!("Kernel not implemented for this evaluator."),
         }
     }
-    /// Evaluate the kernel for a set of charges.
+
     fn evaluate(
         &self,
         charges: ArrayView2<Self::FloatingPointType>,
@@ -218,7 +258,6 @@ impl<P: ParticleContainerAccessor> RealDirectEvaluator
 impl<P: ParticleContainerAccessor> ComplexDirectEvaluator
     for DirectEvaluator<P, num::complex::Complex<P::FloatingPointType>>
 {
-    /// Assemble the kernel matrix in-place
     fn assemble_in_place(
         &self,
         result: ArrayViewMut2<num::complex::Complex<Self::FloatingPointType>>,
@@ -239,7 +278,6 @@ impl<P: ParticleContainerAccessor> ComplexDirectEvaluator
         }
     }
 
-    /// Evaluate for a set of charges in-pace.
     fn evaluate_in_place(
         &self,
         charges: ArrayView2<Complex<Self::FloatingPointType>>,
@@ -262,7 +300,6 @@ impl<P: ParticleContainerAccessor> ComplexDirectEvaluator
         }
     }
 
-    /// Assemble the kernel matrix and return it
     fn assemble(
         &self,
         threading_type: ThreadingType,
@@ -276,7 +313,6 @@ impl<P: ParticleContainerAccessor> ComplexDirectEvaluator
         result
     }
 
-    /// Evaluate the kernel for a set of charges.
     fn evaluate(
         &self,
         charges: ArrayView2<Complex<Self::FloatingPointType>>,
