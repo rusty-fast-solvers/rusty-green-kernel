@@ -1,5 +1,44 @@
+"""
+Optimized evaluation of direct Greens functions interactions.
+
+This module provides routines to evaluate the Greens functions
+for Laplace, Helmholtz, and modified Helmholtz problmes, given
+vectors of sources and targets. The underlying routines are
+implemented in Rust, multithreaded, and take advantage of SIMD
+acceleration.
+
+The implemented kernels are:
+
+Laplace Kernel: g(x, y) = 1 / (4 pi * | x - y |)
+Helmhotz Kernel: g(x, y) = exp(1j * k * | x - y |) / (4 pi * | x- y|)
+Modified Helmholtz Kernel: g(x, y) = exp(-omega * | x - y | ) / (4 pi * | x - y|)
+
+For x = y all kernels are defined to be zero.
+
+The routines starting with `assemble...` evaluate the matrix if interactions
+A_ij = g(x_i, y_j), where the x are targets and the y are sources.
+
+The routines starting with `evaluate...` evaluate potential sums of the forms
+
+f(x_i) = sum_j g(x_i, y_j) c_j
+
+for charges c_j. Optionally, also the gradients with respect to the targets x_i
+can be evaluated.
+
+"""
+
+
 import numpy as np
 from .rusty_green_kernel import ffi, lib
+
+__all__ = ['assemble_laplace_kernel',
+           'evaluate_laplace_kernel',
+           'assemble_helmholtz_kernel',
+           'evaluate_helmholtz_kernel',
+           'assemble_modified_helmholtz_kernel',
+           'evaluate_modified_helmholtz_kernel'
+           ]
+
 
 def as_double_ptr(arr):
     """Turn to a double ptr."""
@@ -33,7 +72,35 @@ def align_data(arr, dtype=None):
 
 
 def assemble_laplace_kernel(sources, targets, dtype=np.float64, parallel=True):
-    """Assemble the Laplace kernel matrix for many targets and sources."""
+    """
+    Assemble the Laplace kernel matrix for many targets and sources.
+    
+    Returns the Laplace kernel matrix for the Green's function
+    
+    g(x, y) = 1 / (4 pi * | x - y |)
+
+    Parameters
+    ----------
+
+    sources: ndarray
+        A (3, nsources) array definining nsources sources points.
+    targets: ndarray
+        A (3, ntargets) array defining ntargets target points.
+    dtype: dtype object
+        Allowed types are np.float64 and np.float32. If the input
+        parameters are not given in the specified type, they are
+        converted to it. The output is returned as np.float64 (default)
+        or np.float32.
+    parallel: bool
+        If True, use multithreaded evaluation for the kernel matrix.
+
+    Outputs
+    -------
+    A kernel matrix A, such that A[i, j] is the interaction of the
+    jth source point with the ith target point using the Laplace Green's
+    function.
+    
+    """
 
     if dtype not in [np.float64, np.float32]:
         raise ValueError(
@@ -85,7 +152,47 @@ def assemble_laplace_kernel(sources, targets, dtype=np.float64, parallel=True):
 def evaluate_laplace_kernel(
     sources, targets, charges, dtype=np.float64, parallel=True, return_gradients=False
 ):
-    """Evaluate the Laplace kernel matrix for many targets and sources."""
+    """
+    Evaluate a potential sum for the Laplace kernel.
+    
+    Returns the potential sum
+
+    f(x_i) = sum_j g(x_i, y_j) c_j
+
+    for the Laplace kernel
+    
+    g(x, y) = 1 / (4 pi * | x - y |)
+
+    Parameters
+    ----------
+
+    sources: ndarray
+        A (3, nsources) array definining nsources sources points.
+    targets: ndarray
+        A (3, ntargets) array defining ntargets target points.
+    charges: ndarray
+        A (m, nsources) array of m charge vectors. The charges
+        must be real numbers.
+    dtype: dtype object
+        Allowed types are np.float64 and np.float32. If the input
+        parameters are not given in the specified type, they are
+        converted to it. The output is returned as np.float64 (default)
+        or np.float32.
+    parallel: bool
+        If True, use multithreaded evaluation for the kernel matrix.
+    return_gradients: bool
+        If True, return also the gradient of f with respect to the target
+        point x_i.
+
+    Outputs
+    -------
+    An array of A dimension (m, ntargets, 1) if gradients are not requested
+    and of dimension (m, ntargets, 4) if gradients are requested. The value
+    A[i, j, 0] is the value of the charge potential sum for the ith charge
+    vector at the jth target. The values A[i, j, 1:] is the associated
+    gradient with respect to the target.
+    
+    """
 
     if dtype not in [np.float64, np.float32]:
         raise ValueError(
@@ -160,7 +267,37 @@ def evaluate_laplace_kernel(
 def assemble_helmholtz_kernel(
     sources, targets, wavenumber, dtype=np.complex128, parallel=True
 ):
-    """Assemble the Helmholtz kernel matrix for many targets and sources."""
+    """
+    Assemble the Helmholtz kernel matrix for many targets and sources.
+    
+    Returns the Helmholtz kernel matrix for the Green's function
+    
+    g(x, y) = exp(1j * k * | x- y| ) / (4 pi * | x - y |)
+
+    Parameters
+    ----------
+
+    sources: ndarray
+        A (3, nsources) array definining nsources sources points.
+    targets: ndarray
+        A (3, ntargets) array defining ntargets target points.
+    wavenumber: complex number
+        The wavenumber k. Complex numbers are allowed.
+    dtype: dtype object
+        Allowed types are np.complex128 and np.complex64. If the input
+        parameters are not given in the specified type, they are
+        converted to it. The output is returned as np.complex128 (default)
+        or np.complex64.
+    parallel: bool
+        If True, use multithreaded evaluation for the kernel matrix.
+
+    Outputs
+    -------
+    A kernel matrix A, such that A[i, j] is the interaction of the
+    jth source point with the ith target point using the Helmholtz Green's
+    function.
+    
+    """
 
     if dtype not in [np.complex128, np.complex64]:
         raise ValueError(
@@ -231,7 +368,49 @@ def evaluate_helmholtz_kernel(
     parallel=True,
     return_gradients=False,
 ):
-    """Evaluate the Laplace kernel matrix for many targets and sources."""
+    """
+    Evaluate a potential sum for the Helmholtz kernel.
+    
+    Returns the potential sum
+
+    f(x_i) = sum_j g(x_i, y_j) c_j
+
+    for the Helmholtz kernel
+    
+    g(x, y) = exp( 1j * k * | x - y | ) / (4 pi * | x - y |)
+
+    Parameters
+    ----------
+
+    sources: ndarray
+        A (3, nsources) array definining nsources sources points.
+    targets: ndarray
+        A (3, ntargets) array defining ntargets target points.
+    charges: ndarray
+        A (m, nsources) array of m charge vectors. The charges
+        are allowed to be complex.
+    wavenumber: complex number
+        The wavenumber k. Complex numbers are allowed.
+    dtype: dtype object
+        Allowed types are np.complex128 and np.complex64. If the input
+        parameters are not given in the specified type, they are
+        converted to it. The output is returned as np.complex128 (default)
+        or np.complex64.
+    parallel: bool
+        If True, use multithreaded evaluation for the kernel matrix.
+    return_gradients: bool
+        If True, return also the gradient of f with respect to the target
+        point x_i.
+
+    Outputs
+    -------
+    An array of A dimension (m, ntargets, 1) if gradients are not requested
+    and of dimension (m, ntargets, 4) if gradients are requested. The value
+    A[i, j, 0] is the value of the charge potential sum for the ith charge
+    vector at the jth target. The values A[i, j, 1:] is the associated
+    gradient with respect to the target.
+    
+    """
 
     if dtype not in [np.complex128, np.complex64]:
         raise ValueError(
@@ -322,7 +501,37 @@ def evaluate_helmholtz_kernel(
         )
 
 def assemble_modified_helmholtz_kernel(sources, targets, omega, dtype=np.float64, parallel=True):
-    """Assemble the Laplace kernel matrix for many targets and sources."""
+    """
+    Assemble the modified Helmholtz kernel matrix for many targets and sources.
+    
+    Returns the modified Helmholtz kernel matrix for the Green's function
+    
+    g(x, y) = exp( -omega * | x- y | ) / (4 pi * | x - y |)
+
+    Parameters
+    ----------
+
+    sources: ndarray
+        A (3, nsources) array definining nsources sources points.
+    targets: ndarray
+        A (3, ntargets) array defining ntargets target points.
+    wavenumber: real number
+        The wavenumber k. Only real numbers are allowed.
+    dtype: dtype object
+        Allowed types are np.float64 and np.float32. If the input
+        parameters are not given in the specified type, they are
+        converted to it. The output is returned as np.float64 (default)
+        or np.float32.
+    parallel: bool
+        If True, use multithreaded evaluation for the kernel matrix.
+
+    Outputs
+    -------
+    A kernel matrix A, such that A[i, j] is the interaction of the
+    jth source point with the ith target point using the modified Helmholtz Green's
+    function.
+    
+    """
 
     if dtype not in [np.float64, np.float32]:
         raise ValueError(
@@ -376,7 +585,49 @@ def assemble_modified_helmholtz_kernel(sources, targets, omega, dtype=np.float64
 def evaluate_modified_helmholtz_kernel(
     sources, targets, charges, omega, dtype=np.float64, parallel=True, return_gradients=False
 ):
-    """Evaluate the Laplace kernel matrix for many targets and sources."""
+    """
+    Evaluate a potential sum for the modified Helmholtz kernel.
+    
+    Returns the potential sum
+
+    f(x_i) = sum_j g(x_i, y_j) c_j
+
+    for the modified Helmholtz kernel
+    
+    g(x, y) = exp( -omega * | x - y | ) / (4 pi * | x - y |)
+
+    Parameters
+    ----------
+
+    sources: ndarray
+        A (3, nsources) array definining nsources sources points.
+    targets: ndarray
+        A (3, ntargets) array defining ntargets target points.
+    charges: ndarray
+        A (m, nsources) array of m charge vectors. The charges
+        are allowed to be complex.
+    wavenumber: real number
+        The parameter omega. Only real numbers are allowed.
+    dtype: dtype object
+        Allowed types are np.float64 and np.float32. If the input
+        parameters are not given in the specified type, they are
+        converted to it. The output is returned as np.float64 (default)
+        or np.float32.
+    parallel: bool
+        If True, use multithreaded evaluation for the kernel matrix.
+    return_gradients: bool
+        If True, return also the gradient of f with respect to the target
+        point x_i.
+
+    Outputs
+    -------
+    An array of A dimension (m, ntargets, 1) if gradients are not requested
+    and of dimension (m, ntargets, 4) if gradients are requested. The value
+    A[i, j, 0] is the value of the charge potential sum for the ith charge
+    vector at the jth target. The values A[i, j, 1:] is the associated
+    gradient with respect to the target.
+    
+    """
 
     if dtype not in [np.float64, np.float32]:
         raise ValueError(
