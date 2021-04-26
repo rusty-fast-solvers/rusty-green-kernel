@@ -6,7 +6,7 @@ edition = "2018"
 description = "A library for the evaluation of potential sums for the Laplace, Helmholtz and modified Helmholtz kernel."
 homepage = "https://github.com/rusty-fast-solvers/rusty-kernel-tools"
 repository = "https://github.com/rusty-fast-solvers/rusty-kernel-tools"
-readme = "README"
+readme = "README.md"
 keywords = ["numerics"]
 categories = ["mathematics", "science"]
 
