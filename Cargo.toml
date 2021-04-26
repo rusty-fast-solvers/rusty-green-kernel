@@ -20,7 +20,7 @@ ndarray = { version = "0.15", features = ["rayon"] }
 approx = "0.4"
 num = "0.4"
 rand = "0.8"
-rusty-kernel-tools = { version = "0.1", path = "../rusty-kernel-tools"}
+rusty-kernel-tools = { version = "0.1" }
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
