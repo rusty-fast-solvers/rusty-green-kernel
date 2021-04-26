@@ -8,9 +8,9 @@ f(x_i) = sum_j g(x_i, y_j) * c_j
 
 and the corresponding gradients with respect to the x_i for g(x_i, y_j) defined as one of:
 
-* Laplace Greens function: g(x, y) = 1 / (4 * pi * | x- y | )
-* Helmholtz Greens function: g(x, y) = exp ( 1j * k * | x - y |) / (4 * pi * | x- y | )
-* Modified Helmholtz Greens function: g(x, y) = exp( -omega * | x- y | ) / (4 * pi * | x- y | )
+* Laplace Greens function: g(x, y) = 1 / (4 * pi * | x - y | )
+* Helmholtz Greens function: g(x, y) = exp ( 1j * k * | x - y |) / (4 * pi * | x - y | )
+* Modified Helmholtz Greens function: g(x, y) = exp( -omega * | x - y | ) / (4 * pi * | x - y | )
 
 The implementation is optimised for the compiler to auto-vectorize with SIMD instruction sets.
 Furthermore, all routines can make use of multithreading.
