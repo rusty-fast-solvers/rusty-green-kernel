@@ -185,7 +185,6 @@ pub fn helmholtz_kernel_impl_no_deriv<T: RealType>(
     let wavenumber_imag: T = num::traits::cast::<f64, T>(wavenumber.im).unwrap();
 
     let mut dist = Array1::<T>::zeros(sources.len_of(Axis(1)));
-    let exp_im = (-wavenumber_imag).exp();
 
     result_real.fill(zero);
     result_imag.fill(zero);
@@ -206,8 +205,9 @@ pub fn helmholtz_kernel_impl_no_deriv<T: RealType>(
         .and(result_real.index_axis_mut(Axis(0), 0))
         .and(result_imag.index_axis_mut(Axis(0), 0))
         .for_each(|&dist_val, result_real_val, result_imag_val| {
-            *result_real_val = exp_im * (wavenumber_real * dist_val).cos() * m_inv_4pi / dist_val;
-            *result_imag_val = exp_im * (wavenumber_real * dist_val).sin() * m_inv_4pi / dist_val;
+            let exp_val = (-wavenumber_imag * dist_val).exp();
+            *result_real_val = exp_val * (wavenumber_real * dist_val).cos() * m_inv_4pi / dist_val;
+            *result_imag_val = exp_val * (wavenumber_real * dist_val).sin() * m_inv_4pi / dist_val;
         });
 
     Zip::from(dist.view())
@@ -241,7 +241,6 @@ pub fn helmholtz_kernel_impl_deriv<T: RealType>(
     let wavenumber_imag: T = num::traits::cast::<f64, T>(wavenumber.im).unwrap();
 
     let mut dist = Array1::<T>::zeros(sources.len_of(Axis(1)));
-    let exp_im = (-wavenumber_imag).exp();
 
     result_real.fill(zero);
     result_imag.fill(zero);
@@ -262,8 +261,9 @@ pub fn helmholtz_kernel_impl_deriv<T: RealType>(
         .and(result_real.index_axis_mut(Axis(0), 0))
         .and(result_imag.index_axis_mut(Axis(0), 0))
         .for_each(|&dist_val, result_real_val, result_imag_val| {
-            *result_real_val = exp_im * (wavenumber_real * dist_val).cos() * m_inv_4pi / dist_val;
-            *result_imag_val = exp_im * (wavenumber_real * dist_val).sin() * m_inv_4pi / dist_val;
+            let exp_val = (-wavenumber_imag * dist_val).exp();
+            *result_real_val = exp_val * (wavenumber_real * dist_val).cos() * m_inv_4pi / dist_val;
+            *result_imag_val = exp_val * (wavenumber_real * dist_val).sin() * m_inv_4pi / dist_val;
         });
 
     // Now do the derivative term
