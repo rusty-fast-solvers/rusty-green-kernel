@@ -1,4 +1,4 @@
-# rusty-green-kernel Fast evaluation of Greens functions in Rust
+# Fast evaluation of Greens functions in Rust
 
 This library allows the fast evaluation of Greens functions and potential sums
 for Laplace, Helmholtz, and modified Helmholtz problems. The library can evaluate
