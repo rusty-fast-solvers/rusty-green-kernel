@@ -39,7 +39,7 @@
 //! `` 
 //! 
 //! to compile and install the Python module. It is important that the `RUSTFLAGS` environment variable is set as stated above.
-//! The Python module is called `rusty-green-kernel`.
+//! The Python module is called `rusty_green_kernel`.
 //! 
 //! ### Rust API
 //! 
@@ -82,7 +82,7 @@
 //! 
 //! ### Python API
 //! 
-//! For details of the Python module see the Python documentation in the `rusty-green-kernel` module.
+//! For details of the Python module see the Python documentation in the `rusty_green_kernel` module.
 //! 
 
 pub mod kernels;
