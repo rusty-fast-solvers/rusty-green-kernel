@@ -17,17 +17,17 @@ pub(crate) fn assemble_in_place_impl_modified_helmholtz<T: RealType>(
     let nsources = sources.len_of(Axis(1));
 
     match threading_type {
-        ThreadingType::Parallel => Zip::from(targets.columns())
-            .and(result.rows_mut())
-            .par_for_each(|target, result_row| {
+        ThreadingType::Parallel => Zip::from(targets.axis_iter(Axis(1)))
+            .and(result.axis_iter_mut(Axis(0)))
+            .par_apply(|target, result_row| {
                 let tmp = result_row
                     .into_shape((1, nsources))
                     .expect("Cannot convert to 2-dimensional array.");
                 modified_helmholtz_kernel(target, sources, tmp, omega, &EvalMode::Value);
             }),
-        ThreadingType::Serial => Zip::from(targets.columns())
-            .and(result.rows_mut())
-            .for_each(|target, result_row| {
+        ThreadingType::Serial => Zip::from(targets.axis_iter(Axis(1)))
+            .and(result.axis_iter_mut(Axis(0)))
+            .apply(|target, result_row| {
                 let tmp = result_row
                     .into_shape((1, nsources))
                     .expect("Cannot conver to 2-dimensional array.");
@@ -59,18 +59,18 @@ pub(crate) fn evaluate_in_place_impl_modified_helmholtz<T: RealType>(
     result.fill(num::traits::zero());
 
     match threading_type {
-        ThreadingType::Parallel => Zip::from(targets.columns())
+        ThreadingType::Parallel => Zip::from(targets.axis_iter(Axis(1)))
             .and(result.axis_iter_mut(Axis(1)))
-            .par_for_each(|target, mut result_block| {
+            .par_apply(|target, mut result_block| {
                 let mut tmp = Array2::<T>::zeros((chunks, nsources));
                 modified_helmholtz_kernel(target, sources, tmp.view_mut(), omega, eval_mode);
-                Zip::from(charges.rows())
-                    .and(result_block.rows_mut())
-                    .for_each(|charge_vec, result_row| {
-                        Zip::from(tmp.rows())
+                Zip::from(charges.axis_iter(Axis(0)))
+                    .and(result_block.axis_iter_mut(Axis(0)))
+                    .apply(|charge_vec, result_row| {
+                        Zip::from(tmp.axis_iter(Axis(0)))
                             .and(result_row)
-                            .for_each(|tmp_row, result_elem| {
-                                Zip::from(tmp_row).and(charge_vec).for_each(
+                            .apply(|tmp_row, result_elem| {
+                                Zip::from(tmp_row).and(charge_vec).apply(
                                     |tmp_elem, charge_elem| {
                                         *result_elem += *tmp_elem * *charge_elem
                                     },
@@ -78,18 +78,18 @@ pub(crate) fn evaluate_in_place_impl_modified_helmholtz<T: RealType>(
                             })
                     })
             }),
-        ThreadingType::Serial => Zip::from(targets.columns())
+        ThreadingType::Serial => Zip::from(targets.axis_iter(Axis(1)))
             .and(result.axis_iter_mut(Axis(1)))
-            .for_each(|target, mut result_block| {
+            .apply(|target, mut result_block| {
                 let mut tmp = Array2::<T>::zeros((chunks, nsources));
                 modified_helmholtz_kernel(target, sources, tmp.view_mut(), omega, eval_mode);
-                Zip::from(charges.rows())
-                    .and(result_block.rows_mut())
-                    .for_each(|charge_vec, result_row| {
-                        Zip::from(tmp.rows())
+                Zip::from(charges.axis_iter(Axis(0)))
+                    .and(result_block.axis_iter_mut(Axis(0)))
+                    .apply(|charge_vec, result_row| {
+                        Zip::from(tmp.axis_iter(Axis(0)))
                             .and(result_row)
-                            .for_each(|tmp_row, result_elem| {
-                                Zip::from(tmp_row).and(charge_vec).for_each(
+                            .apply(|tmp_row, result_elem| {
+                                Zip::from(tmp_row).and(charge_vec).apply(
                                     |tmp_elem, charge_elem| {
                                         *result_elem += *tmp_elem * *charge_elem
                                     },

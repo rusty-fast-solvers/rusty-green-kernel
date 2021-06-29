@@ -54,11 +54,11 @@ pub fn laplace_kernel_impl_no_deriv<T: RealType>(
     result.fill(zero);
 
     Zip::from(target)
-        .and(sources.rows())
-        .for_each(|&target_value, source_row| {
+        .and(sources.axis_iter(Axis(0)))
+        .apply(|&target_value, source_row| {
             Zip::from(source_row)
                 .and(result.index_axis_mut(Axis(0), 0))
-                .for_each(|&source_value, result_ref| {
+                .apply(|&source_value, result_ref| {
                     *result_ref += (target_value - source_value) * (target_value - source_value)
                 })
         });
@@ -93,11 +93,11 @@ pub fn laplace_kernel_impl_deriv<T: RealType>(
     // First compute the Green fct. values
 
     Zip::from(target)
-        .and(sources.rows())
-        .for_each(|&target_value, source_row| {
+        .and(sources.axis_iter(Axis(0)))
+        .apply(|&target_value, source_row| {
             Zip::from(source_row)
                 .and(result.index_axis_mut(Axis(0), 0))
-                .for_each(|&source_value, result_ref| {
+                .apply(|&source_value, result_ref| {
                     *result_ref += (target_value - source_value) * (target_value - source_value)
                 })
         });
@@ -116,11 +116,11 @@ pub fn laplace_kernel_impl_deriv<T: RealType>(
     let (values, mut derivs) = result.split_at(Axis(0), 1);
     let values = values.index_axis(Axis(0), 0);
 
-    Zip::from(derivs.rows_mut())
+    Zip::from(derivs.axis_iter_mut(Axis(0)))
         .and(target.view())
-        .and(sources.rows())
-        .for_each(|deriv_row, &target_value, source_row| {
-            Zip::from(deriv_row).and(source_row).and(values).for_each(
+        .and(sources.axis_iter(Axis(0)))
+        .apply(|deriv_row, &target_value, source_row| {
+            Zip::from(deriv_row).and(source_row).and(values).apply(
                 |deriv_value, &source_value, &value| {
                     *deriv_value =
                         (m_4pi * value).powi(3) * (source_value - target_value) * m_inv_4pi;
@@ -190,11 +190,11 @@ pub fn helmholtz_kernel_impl_no_deriv<T: RealType>(
     result_imag.fill(zero);
 
     Zip::from(target)
-        .and(sources.rows())
-        .for_each(|&target_value, source_row| {
+        .and(sources.axis_iter(Axis(0)))
+        .apply(|&target_value, source_row| {
             Zip::from(source_row)
                 .and(dist.view_mut())
-                .for_each(|&source_value, dist_ref| {
+                .apply(|&source_value, dist_ref| {
                     *dist_ref += (source_value - target_value).powi(2)
                 })
         });
@@ -204,7 +204,7 @@ pub fn helmholtz_kernel_impl_no_deriv<T: RealType>(
     Zip::from(dist.view())
         .and(result_real.index_axis_mut(Axis(0), 0))
         .and(result_imag.index_axis_mut(Axis(0), 0))
-        .for_each(|&dist_val, result_real_val, result_imag_val| {
+        .apply(|&dist_val, result_real_val, result_imag_val| {
             let exp_val = (-wavenumber_imag * dist_val).exp();
             *result_real_val = exp_val * (wavenumber_real * dist_val).cos() * m_inv_4pi / dist_val;
             *result_imag_val = exp_val * (wavenumber_real * dist_val).sin() * m_inv_4pi / dist_val;
@@ -213,7 +213,7 @@ pub fn helmholtz_kernel_impl_no_deriv<T: RealType>(
     Zip::from(dist.view())
         .and(result_real.index_axis_mut(Axis(0), 0))
         .and(result_imag.index_axis_mut(Axis(0), 0))
-        .for_each(|&dist_val, result_real_val, result_imag_val| {
+        .apply(|&dist_val, result_real_val, result_imag_val| {
             if dist_val == zero {
                 *result_real_val = zero;
                 *result_imag_val = zero;
@@ -246,11 +246,11 @@ pub fn helmholtz_kernel_impl_deriv<T: RealType>(
     result_imag.fill(zero);
 
     Zip::from(target)
-        .and(sources.rows())
-        .for_each(|&target_value, source_row| {
+        .and(sources.axis_iter(Axis(0)))
+        .apply(|&target_value, source_row| {
             Zip::from(source_row)
                 .and(dist.view_mut())
-                .for_each(|&source_value, dist_ref| {
+                .apply(|&source_value, dist_ref| {
                     *dist_ref += (source_value - target_value).powi(2)
                 })
         });
@@ -260,7 +260,7 @@ pub fn helmholtz_kernel_impl_deriv<T: RealType>(
     Zip::from(dist.view())
         .and(result_real.index_axis_mut(Axis(0), 0))
         .and(result_imag.index_axis_mut(Axis(0), 0))
-        .for_each(|&dist_val, result_real_val, result_imag_val| {
+        .apply(|&dist_val, result_real_val, result_imag_val| {
             let exp_val = (-wavenumber_imag * dist_val).exp();
             *result_real_val = exp_val * (wavenumber_real * dist_val).cos() * m_inv_4pi / dist_val;
             *result_imag_val = exp_val * (wavenumber_real * dist_val).sin() * m_inv_4pi / dist_val;
@@ -274,11 +274,11 @@ pub fn helmholtz_kernel_impl_deriv<T: RealType>(
     let values_real = values_real.index_axis(Axis(0), 0);
     let values_imag = values_imag.index_axis(Axis(0), 0);
 
-    Zip::from(derivs_real.rows_mut())
-        .and(derivs_imag.rows_mut())
+    Zip::from(derivs_real.axis_iter_mut(Axis(0)))
+        .and(derivs_imag.axis_iter_mut(Axis(0)))
         .and(target.view())
-        .and(sources.rows())
-        .for_each(
+        .and(sources.axis_iter(Axis(0)))
+        .apply(
             |deriv_real_row, deriv_imag_row, &target_value, source_row| {
                 Zip::from(deriv_real_row)
                     .and(deriv_imag_row)
@@ -286,7 +286,7 @@ pub fn helmholtz_kernel_impl_deriv<T: RealType>(
                     .and(values_real)
                     .and(values_imag)
                     .and(dist.view())
-                    .for_each(
+                    .apply(
                         |deriv_real_value,
                          deriv_imag_value,
                          &source_value,
@@ -304,10 +304,10 @@ pub fn helmholtz_kernel_impl_deriv<T: RealType>(
             },
         );
 
-    Zip::from(result_real.rows_mut())
-        .and(result_imag.rows_mut())
-        .for_each(|real_row, imag_row| {
-            Zip::from(dist.view()).and(real_row).and(imag_row).for_each(
+    Zip::from(result_real.axis_iter_mut(Axis(0)))
+        .and(result_imag.axis_iter_mut(Axis(0)))
+        .apply(|real_row, imag_row| {
+            Zip::from(dist.view()).and(real_row).and(imag_row).apply(
                 |dist_elem, real_elem, imag_elem| {
                     if *dist_elem == zero {
                         *real_elem = zero;
@@ -366,11 +366,11 @@ pub fn modified_helmholtz_kernel_impl_no_deriv<T: RealType>(
     result.fill(zero);
 
     Zip::from(target)
-        .and(sources.rows())
-        .for_each(|&target_value, source_row| {
+        .and(sources.axis_iter(Axis(0)))
+        .apply(|&target_value, source_row| {
             Zip::from(source_row)
                 .and(result.index_axis_mut(Axis(0), 0))
-                .for_each(|&source_value, result_ref| {
+                .apply(|&source_value, result_ref| {
                     *result_ref += (target_value - source_value) * (target_value - source_value)
                 })
         });
@@ -413,11 +413,11 @@ pub fn modified_helmholtz_kernel_impl_deriv<T: RealType>(
     // First compute the Green fct. values
 
     Zip::from(target)
-        .and(sources.rows())
-        .for_each(|&target_value, source_row| {
+        .and(sources.axis_iter(Axis(0)))
+        .apply(|&target_value, source_row| {
             Zip::from(source_row)
                 .and(dist.view_mut())
-                .for_each(|&source_value, dist_ref| {
+                .apply(|&source_value, dist_ref| {
                     *dist_ref += (target_value - source_value) * (target_value - source_value)
                 })
         });
@@ -427,7 +427,7 @@ pub fn modified_helmholtz_kernel_impl_deriv<T: RealType>(
 
     Zip::from(result.index_axis_mut(Axis(0), 0))
         .and(dist.view())
-        .for_each(|result_ref, &dist_value| {
+        .apply(|result_ref, &dist_value| {
             *result_ref = (-omega * dist_value).exp() * m_inv_4pi / dist_value
         });
 
@@ -436,15 +436,15 @@ pub fn modified_helmholtz_kernel_impl_deriv<T: RealType>(
     let (values, mut derivs) = result.view_mut().split_at(Axis(0), 1);
     let values = values.index_axis(Axis(0), 0);
 
-    Zip::from(derivs.rows_mut())
+    Zip::from(derivs.axis_iter_mut(Axis(0)))
         .and(target.view())
-        .and(sources.rows())
-        .for_each(|deriv_row, &target_value, source_row| {
+        .and(sources.axis_iter(Axis(0)))
+        .apply(|deriv_row, &target_value, source_row| {
             Zip::from(deriv_row)
                 .and(source_row)
                 .and(values)
                 .and(dist.view())
-                .for_each(|deriv_value, &source_value, &value, &dist_value| {
+                .apply(|deriv_value, &source_value, &value, &dist_value| {
                     *deriv_value = value * (target_value - source_value) / dist_value.powi(2)
                         * (-omega * dist_value - one)
                 })
@@ -453,7 +453,7 @@ pub fn modified_helmholtz_kernel_impl_deriv<T: RealType>(
     result.view_mut().axis_iter_mut(Axis(0)).for_each(|row|
         Zip::from(row)
         .and(dist.view())
-        .for_each(|elem, &dist_value|
+        .apply(|elem, &dist_value|
             if dist_value == zero {
                 *elem = zero;
             })

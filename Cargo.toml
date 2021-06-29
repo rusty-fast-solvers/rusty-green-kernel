@@ -16,9 +16,9 @@ name = "rusty_green_kernel"
 crate-type = ["lib", "cdylib"]
 
 [dependencies]
-ndarray = { version = "0.15", features = ["rayon"] }
+ndarray = { version = "0.14", features = ["rayon"] }
 approx = "0.4"
-num = "0.4"
+num = "0.3"
 rand = "0.8"
 rusty-kernel-tools = { version = "0.1" }
 

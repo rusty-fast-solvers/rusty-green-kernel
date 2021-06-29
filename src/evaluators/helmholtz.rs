@@ -17,9 +17,9 @@ pub(crate) fn assemble_in_place_impl_helmholtz<T: RealType>(
     let nsources = sources.len_of(Axis(1));
 
     match threading_type {
-        ThreadingType::Parallel => Zip::from(targets.columns())
-            .and(result.rows_mut())
-            .par_for_each(|target, mut result_row| {
+        ThreadingType::Parallel => Zip::from(targets.axis_iter(Axis(1)))
+            .and(result.axis_iter_mut(Axis(0)))
+            .par_apply(|target, mut result_row| {
                 let mut tmp_real = Array2::<T>::zeros((1, nsources));
                 let mut tmp_imag = Array2::<T>::zeros((1, nsources));
                 helmholtz_kernel(
@@ -33,14 +33,14 @@ pub(crate) fn assemble_in_place_impl_helmholtz<T: RealType>(
                 Zip::from(result_row.view_mut())
                     .and(tmp_real.index_axis(Axis(0), 0))
                     .and(tmp_imag.index_axis(Axis(0), 0))
-                    .for_each(|result_elem, &tmp_real_elem, &tmp_imag_elem| {
+                    .apply(|result_elem, &tmp_real_elem, &tmp_imag_elem| {
                         result_elem.re = tmp_real_elem;
                         result_elem.im = tmp_imag_elem;
                     });
             }),
-        ThreadingType::Serial => Zip::from(targets.columns())
-            .and(result.rows_mut())
-            .for_each(|target, mut result_row| {
+        ThreadingType::Serial => Zip::from(targets.axis_iter(Axis(1)))
+            .and(result.axis_iter_mut(Axis(0)))
+            .apply(|target, mut result_row| {
                 let mut tmp_real = Array2::<T>::zeros((1, nsources));
                 let mut tmp_imag = Array2::<T>::zeros((1, nsources));
                 helmholtz_kernel(
@@ -54,7 +54,7 @@ pub(crate) fn assemble_in_place_impl_helmholtz<T: RealType>(
                 Zip::from(result_row.view_mut())
                     .and(tmp_real.index_axis(Axis(0), 0))
                     .and(tmp_imag.index_axis(Axis(0), 0))
-                    .for_each(|result_elem, &tmp_real_elem, &tmp_imag_elem| {
+                    .apply(|result_elem, &tmp_real_elem, &tmp_imag_elem| {
                         result_elem.re = tmp_real_elem;
                         result_elem.im = tmp_imag_elem;
                     });
@@ -88,9 +88,9 @@ pub(crate) fn evaluate_in_place_impl_helmholtz<T: RealType>(
     result.fill(num::traits::zero());
 
     match threading_type {
-        ThreadingType::Parallel => Zip::from(targets.columns())
+        ThreadingType::Parallel => Zip::from(targets.axis_iter(Axis(1)))
             .and(result.axis_iter_mut(Axis(1)))
-            .par_for_each(|target, mut result_block| {
+            .par_apply(|target, mut result_block| {
                 let mut tmp_real = Array2::<T>::zeros((chunks, nsources));
                 let mut tmp_imag = Array2::<T>::zeros((chunks, nsources));
                 helmholtz_kernel(
@@ -101,19 +101,19 @@ pub(crate) fn evaluate_in_place_impl_helmholtz<T: RealType>(
                     wavenumber,
                     eval_mode,
                 );
-                Zip::from(charges_real.rows())
-                    .and(charges_imag.rows())
-                    .and(result_block.rows_mut())
-                    .for_each(|charge_vec_real, charge_vec_imag, result_row| {
-                        Zip::from(tmp_real.rows())
-                            .and(tmp_imag.rows())
+                Zip::from(charges_real.axis_iter(Axis(0)))
+                    .and(charges_imag.axis_iter(Axis(0)))
+                    .and(result_block.axis_iter_mut(Axis(0)))
+                    .apply(|charge_vec_real, charge_vec_imag, result_row| {
+                        Zip::from(tmp_real.axis_iter(Axis(0)))
+                            .and(tmp_imag.axis_iter(Axis(0)))
                             .and(result_row)
-                            .for_each(|tmp_real_row, tmp_imag_row, result_elem| {
+                            .apply(|tmp_real_row, tmp_imag_row, result_elem| {
                                 Zip::from(tmp_real_row)
                                     .and(tmp_imag_row)
                                     .and(charge_vec_real)
                                     .and(charge_vec_imag)
-                                    .for_each(
+                                    .apply(
                                         |tmp_elem_real,
                                          tmp_elem_imag,
                                          charge_elem_real,
@@ -128,9 +128,9 @@ pub(crate) fn evaluate_in_place_impl_helmholtz<T: RealType>(
                     })
             }),
 
-        ThreadingType::Serial => Zip::from(targets.columns())
+        ThreadingType::Serial => Zip::from(targets.axis_iter(Axis(1)))
             .and(result.axis_iter_mut(Axis(1)))
-            .for_each(|target, mut result_block| {
+            .apply(|target, mut result_block| {
                 let mut tmp_real = Array2::<T>::zeros((chunks, nsources));
                 let mut tmp_imag = Array2::<T>::zeros((chunks, nsources));
                 helmholtz_kernel(
@@ -141,19 +141,19 @@ pub(crate) fn evaluate_in_place_impl_helmholtz<T: RealType>(
                     wavenumber,
                     eval_mode,
                 );
-                Zip::from(charges_real.rows())
-                    .and(charges_imag.rows())
-                    .and(result_block.rows_mut())
-                    .for_each(|charge_vec_real, charge_vec_imag, result_row| {
-                        Zip::from(tmp_real.rows())
-                            .and(tmp_imag.rows())
+                Zip::from(charges_real.axis_iter(Axis(0)))
+                    .and(charges_imag.axis_iter(Axis(0)))
+                    .and(result_block.axis_iter_mut(Axis(0)))
+                    .apply(|charge_vec_real, charge_vec_imag, result_row| {
+                        Zip::from(tmp_real.axis_iter(Axis(0)))
+                            .and(tmp_imag.axis_iter(Axis(0)))
                             .and(result_row)
-                            .for_each(|tmp_real_row, tmp_imag_row, result_elem| {
+                            .apply(|tmp_real_row, tmp_imag_row, result_elem| {
                                 Zip::from(tmp_real_row)
                                     .and(tmp_imag_row)
                                     .and(charge_vec_real)
                                     .and(charge_vec_imag)
-                                    .for_each(
+                                    .apply(
                                         |tmp_elem_real,
                                          tmp_elem_imag,
                                          charge_elem_real,
