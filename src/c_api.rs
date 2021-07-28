@@ -2,7 +2,7 @@
 
 use ndarray;
 use num::complex::Complex;
-use rusty_kernel_tools::ThreadingType;
+use rusty_base::{EvalMode, ThreadingType};
 
 use crate::RealDirectEvaluator;
 use crate::ComplexDirectEvaluator;
@@ -104,7 +104,6 @@ pub extern "C" fn evaluate_laplace_kernel_f64(
     return_gradients: bool,
     parallel: bool,
 ) {
-    use crate::kernels::EvalMode;
 
     let eval_mode = match return_gradients {
         true => EvalMode::ValueGrad,
@@ -164,7 +163,6 @@ pub extern "C" fn evaluate_laplace_kernel_f32(
     return_gradients: bool,
     parallel: bool,
 ) {
-    use crate::kernels::EvalMode;
 
     let eval_mode = match return_gradients {
         true => EvalMode::ValueGrad,
@@ -319,7 +317,6 @@ pub extern "C" fn evaluate_helmholtz_kernel_f64(
     return_gradients: bool,
     parallel: bool,
 ) {
-    use crate::kernels::EvalMode;
 
     let eval_mode = match return_gradients {
         true => EvalMode::ValueGrad,
@@ -393,7 +390,6 @@ pub extern "C" fn evaluate_helmholtz_kernel_f32(
     return_gradients: bool,
     parallel: bool,
 ) {
-    use crate::kernels::EvalMode;
 
     let eval_mode = match return_gradients {
         true => EvalMode::ValueGrad,
@@ -535,7 +531,6 @@ pub extern "C" fn evaluate_modified_helmholtz_kernel_f64(
     return_gradients: bool,
     parallel: bool,
 ) {
-    use crate::kernels::EvalMode;
 
     let eval_mode = match return_gradients {
         true => EvalMode::ValueGrad,
@@ -597,7 +592,6 @@ pub extern "C" fn evaluate_modified_helmholtz_kernel_f32(
     return_gradients: bool,
     parallel: bool,
 ) {
-    use crate::kernels::EvalMode;
 
     let eval_mode = match return_gradients {
         true => EvalMode::ValueGrad,

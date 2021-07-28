@@ -1,7 +1,6 @@
-use crate::kernels::EvalMode;
 /// Implementation of assembler function for modified Helmholtz kernels.
 use ndarray::{Array2, ArrayView2, ArrayViewMut2, ArrayViewMut3, Axis};
-use rusty_kernel_tools::{RealType, ThreadingType};
+use rusty_base::{EvalMode, RealType, ThreadingType};
 
 ///Implementation of the assembler function for modified Helmholtz kernels.
 pub(crate) fn assemble_in_place_impl_modified_helmholtz<T: RealType>(

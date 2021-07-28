@@ -17,10 +17,11 @@ crate-type = ["lib", "cdylib"]
 
 [dependencies]
 ndarray = { version = "0.14", features = ["rayon"] }
+ndarray-linalg = {version = "0.13"}
 approx = "0.4"
 num = "0.3"
 rand = "0.8"
-rusty-kernel-tools = { version = "0.1" }
+rusty-base = { version = "0.1", path = "../rusty-base" }
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }

@@ -1,15 +1,8 @@
 //! Definitions of the supported Greens function kernels.
 use ndarray::{Array1, ArrayView1, ArrayView2, ArrayViewMut2, Axis};
 use num;
-use rusty_kernel_tools::RealType;
+use rusty_base::{EvalMode, RealType};
 
-/// This enum defines the Evaluation Mode.
-pub enum EvalMode {
-    /// Only evaluate Green's function values.
-    Value,
-    /// Evaluate values and derivatives.
-    ValueGrad,
-}
 
 /// Evaluation of the Laplace kernel for
 /// a single target and many sources. 
@@ -65,7 +58,7 @@ pub fn laplace_kernel_impl_no_deriv<T: RealType>(
 
     result
         .index_axis_mut(Axis(0), 0)
-        .mapv_inplace(|item| m_inv_4pi / item.sqrt());
+        .mapv_inplace(|item| m_inv_4pi / <T as num::Float>::sqrt(item));
     result
         .index_axis_mut(Axis(0), 0)
         .iter_mut()
@@ -106,7 +99,7 @@ pub fn laplace_kernel_impl_deriv<T: RealType>(
 
     result
         .index_axis_mut(Axis(0), 0)
-        .mapv_inplace(|item| m_inv_4pi / item.sqrt());
+        .mapv_inplace(|item| m_inv_4pi / <T as num::Float>::sqrt(item));
     result
         .index_axis_mut(Axis(0), 0)
         .iter_mut()
@@ -123,7 +116,7 @@ pub fn laplace_kernel_impl_deriv<T: RealType>(
             Zip::from(deriv_row).and(source_row).and(values).apply(
                 |deriv_value, &source_value, &value| {
                     *deriv_value =
-                        (m_4pi * value).powi(3) * (source_value - target_value) * m_inv_4pi;
+                        <T as num::Float>::powi(m_4pi * value, 3) * (source_value - target_value) * m_inv_4pi;
                 },
             )
         });
@@ -195,19 +188,19 @@ pub fn helmholtz_kernel_impl_no_deriv<T: RealType>(
             Zip::from(source_row)
                 .and(dist.view_mut())
                 .apply(|&source_value, dist_ref| {
-                    *dist_ref += (source_value - target_value).powi(2)
+                    *dist_ref += <T as num::Float>::powi(source_value - target_value, 2)
                 })
         });
 
-    dist.mapv_inplace(|item| item.sqrt());
+    dist.mapv_inplace(|item| <T as num::Float>::sqrt(item));
 
     Zip::from(dist.view())
         .and(result_real.index_axis_mut(Axis(0), 0))
         .and(result_imag.index_axis_mut(Axis(0), 0))
         .apply(|&dist_val, result_real_val, result_imag_val| {
-            let exp_val = (-wavenumber_imag * dist_val).exp();
-            *result_real_val = exp_val * (wavenumber_real * dist_val).cos() * m_inv_4pi / dist_val;
-            *result_imag_val = exp_val * (wavenumber_real * dist_val).sin() * m_inv_4pi / dist_val;
+            let exp_val = <T as num::Float>::exp(-wavenumber_imag * dist_val);
+            *result_real_val = exp_val * <T as num::Float>::cos(wavenumber_real * dist_val) * m_inv_4pi / dist_val;
+            *result_imag_val = exp_val * <T as num::Float>::sin(wavenumber_real * dist_val) * m_inv_4pi / dist_val;
         });
 
     Zip::from(dist.view())
@@ -251,19 +244,19 @@ pub fn helmholtz_kernel_impl_deriv<T: RealType>(
             Zip::from(source_row)
                 .and(dist.view_mut())
                 .apply(|&source_value, dist_ref| {
-                    *dist_ref += (source_value - target_value).powi(2)
+                    *dist_ref += <T as num::Float>::powi(source_value - target_value, 2)
                 })
         });
 
-    dist.mapv_inplace(|item| item.sqrt());
+    dist.mapv_inplace(|item| <T as num::Float>::sqrt(item));
 
     Zip::from(dist.view())
         .and(result_real.index_axis_mut(Axis(0), 0))
         .and(result_imag.index_axis_mut(Axis(0), 0))
         .apply(|&dist_val, result_real_val, result_imag_val| {
-            let exp_val = (-wavenumber_imag * dist_val).exp();
-            *result_real_val = exp_val * (wavenumber_real * dist_val).cos() * m_inv_4pi / dist_val;
-            *result_imag_val = exp_val * (wavenumber_real * dist_val).sin() * m_inv_4pi / dist_val;
+            let exp_val = <T as num::Float>::exp(-wavenumber_imag * dist_val);
+            *result_real_val = exp_val * <T as num::Float>::cos(wavenumber_real * dist_val) * m_inv_4pi / dist_val;
+            *result_imag_val = exp_val * <T as num::Float>::sin(wavenumber_real * dist_val) * m_inv_4pi / dist_val;
         });
 
     // Now do the derivative term
@@ -293,10 +286,10 @@ pub fn helmholtz_kernel_impl_deriv<T: RealType>(
                          &value_real,
                          &value_imag,
                          &dist_value| {
-                            *deriv_real_value = (target_value - source_value) / dist_value.powi(2)
+                            *deriv_real_value = (target_value - source_value) / <T as num::Float>::powi(dist_value, 2)
                                 * ((-one - wavenumber_imag * dist_value) * value_real
                                     - wavenumber_real * dist_value * value_imag);
-                            *deriv_imag_value = (target_value - source_value) / dist_value.powi(2)
+                            *deriv_imag_value = (target_value - source_value) / <T as num::Float>::powi(dist_value, 2)
                                 * (value_real * wavenumber_real * dist_value
                                     + (-one - wavenumber_imag * dist_value) * value_imag);
                         },
@@ -377,11 +370,11 @@ pub fn modified_helmholtz_kernel_impl_no_deriv<T: RealType>(
 
     result
         .index_axis_mut(Axis(0), 0)
-        .map_inplace(|item| *item = item.sqrt());
+        .map_inplace(|item| *item = <T as num::Float>::sqrt(*item));
 
     result
         .index_axis_mut(Axis(0), 0)
-        .map_inplace(|item| *item = (-omega * *item).exp() * m_inv_4pi / *item);
+        .map_inplace(|item| *item = <T as num::Float>::exp(-omega * *item) * m_inv_4pi / *item);
     result
         .index_axis_mut(Axis(0), 0)
         .iter_mut()
@@ -422,13 +415,13 @@ pub fn modified_helmholtz_kernel_impl_deriv<T: RealType>(
                 })
         });
 
-    dist.map_inplace(|item| *item = item.sqrt());
+    dist.map_inplace(|item| *item = <T as num::Float>::sqrt(*item));
 
 
     Zip::from(result.index_axis_mut(Axis(0), 0))
         .and(dist.view())
         .apply(|result_ref, &dist_value| {
-            *result_ref = (-omega * dist_value).exp() * m_inv_4pi / dist_value
+            *result_ref = <T as num::Float>::exp(-omega * dist_value) * m_inv_4pi / dist_value
         });
 
         // Now compute the derivatives.
@@ -445,7 +438,7 @@ pub fn modified_helmholtz_kernel_impl_deriv<T: RealType>(
                 .and(values)
                 .and(dist.view())
                 .apply(|deriv_value, &source_value, &value, &dist_value| {
-                    *deriv_value = value * (target_value - source_value) / dist_value.powi(2)
+                    *deriv_value = value * (target_value - source_value) / <T as num::Float>::powi(dist_value, 2)
                         * (-omega * dist_value - one)
                 })
         });

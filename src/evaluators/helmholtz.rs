@@ -1,7 +1,6 @@
-use crate::kernels::EvalMode;
 use ndarray::{Array2, ArrayView2, ArrayViewMut2, ArrayViewMut3, Axis};
 use num::complex::Complex;
-use rusty_kernel_tools::{RealType, ThreadingType};
+use rusty_base::{EvalMode, RealType, ThreadingType};
 
 /// Implementation of assembler function for Helmholtz.
 pub(crate) fn assemble_in_place_impl_helmholtz<T: RealType>(

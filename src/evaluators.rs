@@ -11,12 +11,12 @@ pub use base::DirectEvaluator;
 
 use ndarray::{ArrayView2, Array2};
 use num::complex::Complex;
-use rusty_kernel_tools::ParticleContainerView;
-use rusty_kernel_tools::ParticleContainer;
-use rusty_kernel_tools::RealType;
-use rusty_kernel_tools::KernelType;
-use rusty_kernel_tools::make_particle_container;
-use rusty_kernel_tools::make_particle_container_owned;
+use rusty_base::ParticleContainerView;
+use rusty_base::ParticleContainer;
+use rusty_base::RealType;
+use rusty_base::KernelType;
+use rusty_base::make_particle_container;
+use rusty_base::make_particle_container_owned;
 
 
 
