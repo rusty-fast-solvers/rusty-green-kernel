@@ -1,14 +1,7 @@
 //! This module defines C API function to access all assembly and evaluation routines.
 
 use ndarray;
-use num::complex::Complex;
-use rusty_base::{EvalMode, ThreadingType};
-
-use crate::RealDirectEvaluator;
-use crate::ComplexDirectEvaluator;
-use crate::make_laplace_evaluator;
-use crate::make_helmholtz_evaluator;
-use crate::make_modified_helmholtz_evaluator;
+use crate::*;
 
 /// Assemble the Laplace kernel (double precision version).
 /// 
@@ -31,17 +24,17 @@ pub extern "C" fn assemble_laplace_kernel_f64(
     parallel: bool,
 ) {
 
-    let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
-    let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
-    let result =
-        unsafe { ndarray::ArrayViewMut2::from_shape_ptr((ntargets, nsources), result_ptr) };
-
-    let threading_type = match parallel {
-        true => ThreadingType::Parallel,
-        false => ThreadingType::Serial,
-    };
-
-    make_laplace_evaluator(sources, targets).assemble_in_place(result, threading_type);
+    // let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
+    // let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
+    // let result =
+    //     unsafe { ndarray::ArrayViewMut2::from_shape_ptr((ntargets, nsources), result_ptr) };
+    //
+    // let threading_type = match parallel {
+    //     true => ThreadingType::Parallel,
+    //     false => ThreadingType::Serial,
+    // };
+    //
+    // make_laplace_evaluator(sources, targets).assemble_in_place(result, threading_type);
 }
 
 /// Assemble the Laplace kernel (single precision version).
@@ -65,17 +58,17 @@ pub extern "C" fn assemble_laplace_kernel_f32(
     parallel: bool,
 ) {
 
-    let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
-    let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
-    let result =
-        unsafe { ndarray::ArrayViewMut2::from_shape_ptr((ntargets, nsources), result_ptr) };
-
-    let threading_type = match parallel {
-        true => ThreadingType::Parallel,
-        false => ThreadingType::Serial,
-    };
-
-    make_laplace_evaluator(sources, targets).assemble_in_place(result, threading_type);
+//     let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
+//     let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
+//     let result =
+//         unsafe { ndarray::ArrayViewMut2::from_shape_ptr((ntargets, nsources), result_ptr) };
+//
+//     let threading_type = match parallel {
+//         true => ThreadingType::Parallel,
+//         false => ThreadingType::Serial,
+//     };
+//
+//     make_laplace_evaluator(sources, targets).assemble_in_place(result, threading_type);
 }
 /// Evaluate the Laplace potential sum (double precision version).
 /// 
@@ -105,6 +98,8 @@ pub extern "C" fn evaluate_laplace_kernel_f64(
     parallel: bool,
 ) {
 
+    let kernel_type = KernelType::Laplace;
+
     let eval_mode = match return_gradients {
         true => EvalMode::ValueGrad,
         false => EvalMode::Value,
@@ -128,12 +123,8 @@ pub extern "C" fn evaluate_laplace_kernel_f64(
         ndarray::ArrayViewMut3::from_shape_ptr((ncharge_vecs, ntargets, ncols), result_ptr)
     };
 
-    make_laplace_evaluator(sources, targets).evaluate_in_place(
-        charges,
-        result,
-        &eval_mode,
-        threading_type,
-    );
+    f64::evaluate_kernel_in_place(sources, targets, charges, result, kernel_type, eval_mode, threading_type);
+
 }
 
 /// Evaluate the Laplace potential sum (single precision version).
@@ -164,6 +155,8 @@ pub extern "C" fn evaluate_laplace_kernel_f32(
     parallel: bool,
 ) {
 
+    let kernel_type = KernelType::Laplace;
+
     let eval_mode = match return_gradients {
         true => EvalMode::ValueGrad,
         false => EvalMode::Value,
@@ -187,12 +180,8 @@ pub extern "C" fn evaluate_laplace_kernel_f32(
         ndarray::ArrayViewMut3::from_shape_ptr((ncharge_vecs, ntargets, ncols), result_ptr)
     };
 
-    make_laplace_evaluator(sources, targets).evaluate_in_place(
-        charges,
-        result,
-        &eval_mode,
-        threading_type,
-    );
+    f32::evaluate_kernel_in_place(sources, targets, charges, result, kernel_type, eval_mode, threading_type);
+
 }
 
 /// Assemble the Helmholtz kernel (double precision version).
@@ -221,23 +210,23 @@ pub extern "C" fn assemble_helmholtz_kernel_f64(
     parallel: bool,
 ) {
 
-    let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
-    let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
-    let result = unsafe {
-        ndarray::ArrayViewMut2::from_shape_ptr(
-            (ntargets, nsources),
-            result_ptr as *mut Complex<f64>,
-        )
-    };
-    let wavenumber = Complex::<f64>::new(wavenumber_real, wavenumber_imag);
-
-    let threading_type = match parallel {
-        true => ThreadingType::Parallel,
-        false => ThreadingType::Serial,
-    };
-
-    make_helmholtz_evaluator(sources, targets, wavenumber)
-        .assemble_in_place(result, threading_type);
+    // let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
+    // let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
+    // let result = unsafe {
+    //     ndarray::ArrayViewMut2::from_shape_ptr(
+    //         (ntargets, nsources),
+    //         result_ptr as *mut Complex<f64>,
+    //     )
+    // };
+    // let wavenumber = Complex::<f64>::new(wavenumber_real, wavenumber_imag);
+    //
+    // let threading_type = match parallel {
+    //     true => ThreadingType::Parallel,
+    //     false => ThreadingType::Serial,
+    // };
+    //
+    // make_helmholtz_evaluator(sources, targets, wavenumber)
+    //     .assemble_in_place(result, threading_type);
 }
 
 /// Assemble the Helmholtz kernel (single precision version).
@@ -266,23 +255,23 @@ pub extern "C" fn assemble_helmholtz_kernel_f32(
     parallel: bool,
 ) {
 
-    let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
-    let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
-    let result = unsafe {
-        ndarray::ArrayViewMut2::from_shape_ptr(
-            (ntargets, nsources),
-            result_ptr as *mut Complex<f32>,
-        )
-    };
-    let wavenumber = Complex::<f64>::new(wavenumber_real, wavenumber_imag);
-
-    let threading_type = match parallel {
-        true => ThreadingType::Parallel,
-        false => ThreadingType::Serial,
-    };
-
-    make_helmholtz_evaluator(sources, targets, wavenumber)
-        .assemble_in_place(result, threading_type);
+    // let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
+    // let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
+    // let result = unsafe {
+    //     ndarray::ArrayViewMut2::from_shape_ptr(
+    //         (ntargets, nsources),
+    //         result_ptr as *mut Complex<f32>,
+    //     )
+    // };
+    // let wavenumber = Complex::<f64>::new(wavenumber_real, wavenumber_imag);
+    //
+    // let threading_type = match parallel {
+    //     true => ThreadingType::Parallel,
+    //     false => ThreadingType::Serial,
+    // };
+    //
+    // make_helmholtz_evaluator(sources, targets, wavenumber)
+    //     .assemble_in_place(result, threading_type);
 }
 
 /// Evaluate the Helmholtz potential sum (double precision version).
@@ -318,44 +307,44 @@ pub extern "C" fn evaluate_helmholtz_kernel_f64(
     parallel: bool,
 ) {
 
-    let eval_mode = match return_gradients {
-        true => EvalMode::ValueGrad,
-        false => EvalMode::Value,
-    };
-
-    let threading_type = match parallel {
-        true => ThreadingType::Parallel,
-        false => ThreadingType::Serial,
-    };
-
-    let ncols: usize = match eval_mode {
-        EvalMode::Value => 1,
-        EvalMode::ValueGrad => 4,
-    };
-    let wavenumber = Complex::<f64>::new(wavenumber_real, wavenumber_imag);
-
-    let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
-    let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
-    let charges = unsafe {
-        ndarray::ArrayView2::from_shape_ptr(
-            (ncharge_vecs, nsources),
-            charge_ptr as *mut Complex<f64>,
-        )
-    };
-
-    let result = unsafe {
-        ndarray::ArrayViewMut3::from_shape_ptr(
-            (ncharge_vecs, ntargets, ncols),
-            result_ptr as *mut Complex<f64>,
-        )
-    };
-
-    make_helmholtz_evaluator(sources, targets, wavenumber).evaluate_in_place(
-        charges,
-        result,
-        &eval_mode,
-        threading_type,
-    );
+    // let eval_mode = match return_gradients {
+    //     true => EvalMode::ValueGrad,
+    //     false => EvalMode::Value,
+    // };
+    //
+    // let threading_type = match parallel {
+    //     true => ThreadingType::Parallel,
+    //     false => ThreadingType::Serial,
+    // };
+    //
+    // let ncols: usize = match eval_mode {
+    //     EvalMode::Value => 1,
+    //     EvalMode::ValueGrad => 4,
+    // };
+    // let wavenumber = Complex::<f64>::new(wavenumber_real, wavenumber_imag);
+    //
+    // let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
+    // let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
+    // let charges = unsafe {
+    //     ndarray::ArrayView2::from_shape_ptr(
+    //         (ncharge_vecs, nsources),
+    //         charge_ptr as *mut Complex<f64>,
+    //     )
+    // };
+    //
+    // let result = unsafe {
+    //     ndarray::ArrayViewMut3::from_shape_ptr(
+    //         (ncharge_vecs, ntargets, ncols),
+    //         result_ptr as *mut Complex<f64>,
+    //     )
+    // };
+    //
+    // make_helmholtz_evaluator(sources, targets, wavenumber).evaluate_in_place(
+    //     charges,
+    //     result,
+    //     &eval_mode,
+    //     threading_type,
+    // );
 }
 
 /// Evaluate the Helmholtz potential sum (single precision version).
@@ -391,43 +380,43 @@ pub extern "C" fn evaluate_helmholtz_kernel_f32(
     parallel: bool,
 ) {
 
-    let eval_mode = match return_gradients {
-        true => EvalMode::ValueGrad,
-        false => EvalMode::Value,
-    };
-
-    let threading_type = match parallel {
-        true => ThreadingType::Parallel,
-        false => ThreadingType::Serial,
-    };
-
-    let ncols: usize = match eval_mode {
-        EvalMode::Value => 1,
-        EvalMode::ValueGrad => 4,
-    };
-    let wavenumber = Complex::<f64>::new(wavenumber_real, wavenumber_imag);
-
-    let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
-    let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
-    let charges = unsafe {
-        ndarray::ArrayView2::from_shape_ptr(
-            (ncharge_vecs, nsources),
-            charge_ptr as *mut Complex<f32>,
-        )
-    };
-    let result = unsafe {
-        ndarray::ArrayViewMut3::from_shape_ptr(
-            (ncharge_vecs, ntargets, ncols),
-            result_ptr as *mut Complex<f32>,
-        )
-    };
-
-    make_helmholtz_evaluator(sources, targets, wavenumber).evaluate_in_place(
-        charges,
-        result,
-        &eval_mode,
-        threading_type,
-    );
+    // let eval_mode = match return_gradients {
+    //     true => EvalMode::ValueGrad,
+    //     false => EvalMode::Value,
+    // };
+    //
+    // let threading_type = match parallel {
+    //     true => ThreadingType::Parallel,
+    //     false => ThreadingType::Serial,
+    // };
+    //
+    // let ncols: usize = match eval_mode {
+    //     EvalMode::Value => 1,
+    //     EvalMode::ValueGrad => 4,
+    // };
+    // let wavenumber = Complex::<f64>::new(wavenumber_real, wavenumber_imag);
+    //
+    // let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
+    // let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
+    // let charges = unsafe {
+    //     ndarray::ArrayView2::from_shape_ptr(
+    //         (ncharge_vecs, nsources),
+    //         charge_ptr as *mut Complex<f32>,
+    //     )
+    // };
+    // let result = unsafe {
+    //     ndarray::ArrayViewMut3::from_shape_ptr(
+    //         (ncharge_vecs, ntargets, ncols),
+    //         result_ptr as *mut Complex<f32>,
+    //     )
+    // };
+    //
+    // make_helmholtz_evaluator(sources, targets, wavenumber).evaluate_in_place(
+    //     charges,
+    //     result,
+    //     &eval_mode,
+    //     threading_type,
+    // );
 }
 
 /// Assemble the modified Helmholtz kernel (double precision version).
@@ -453,17 +442,17 @@ pub extern "C" fn assemble_modified_helmholtz_kernel_f64(
     parallel: bool,
 ) {
 
-    let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
-    let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
-    let result =
-        unsafe { ndarray::ArrayViewMut2::from_shape_ptr((ntargets, nsources), result_ptr) };
-
-    let threading_type = match parallel {
-        true => ThreadingType::Parallel,
-        false => ThreadingType::Serial,
-    };
-
-    make_modified_helmholtz_evaluator(sources, targets, omega).assemble_in_place(result, threading_type);
+    // let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
+    // let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
+    // let result =
+    //     unsafe { ndarray::ArrayViewMut2::from_shape_ptr((ntargets, nsources), result_ptr) };
+    //
+    // let threading_type = match parallel {
+    //     true => ThreadingType::Parallel,
+    //     false => ThreadingType::Serial,
+    // };
+    //
+    // make_modified_helmholtz_evaluator(sources, targets, omega).assemble_in_place(result, threading_type);
 }
 
 /// Assemble the modified Helmholtz kernel (single precision version).
@@ -489,17 +478,17 @@ pub extern "C" fn assemble_modified_helmholtz_kernel_f32(
     parallel: bool,
 ) {
 
-    let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
-    let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
-    let result =
-        unsafe { ndarray::ArrayViewMut2::from_shape_ptr((ntargets, nsources), result_ptr) };
-
-    let threading_type = match parallel {
-        true => ThreadingType::Parallel,
-        false => ThreadingType::Serial,
-    };
-
-    make_modified_helmholtz_evaluator(sources, targets, omega).assemble_in_place(result, threading_type);
+    // let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
+    // let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
+    // let result =
+    //     unsafe { ndarray::ArrayViewMut2::from_shape_ptr((ntargets, nsources), result_ptr) };
+    //
+    // let threading_type = match parallel {
+    //     true => ThreadingType::Parallel,
+    //     false => ThreadingType::Serial,
+    // };
+    //
+    // make_modified_helmholtz_evaluator(sources, targets, omega).assemble_in_place(result, threading_type);
 }
 
 /// Evaluate the modified Helmholtz potential sum (double precision version).
@@ -532,35 +521,35 @@ pub extern "C" fn evaluate_modified_helmholtz_kernel_f64(
     parallel: bool,
 ) {
 
-    let eval_mode = match return_gradients {
-        true => EvalMode::ValueGrad,
-        false => EvalMode::Value,
-    };
-
-    let threading_type = match parallel {
-        true => ThreadingType::Parallel,
-        false => ThreadingType::Serial,
-    };
-
-    let ncols: usize = match eval_mode {
-        EvalMode::Value => 1,
-        EvalMode::ValueGrad => 4,
-    };
-
-    let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
-    let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
-    let charges =
-        unsafe { ndarray::ArrayView2::from_shape_ptr((ncharge_vecs, nsources), charge_ptr) };
-    let result = unsafe {
-        ndarray::ArrayViewMut3::from_shape_ptr((ncharge_vecs, ntargets, ncols), result_ptr)
-    };
-
-    make_modified_helmholtz_evaluator(sources, targets, omega).evaluate_in_place(
-        charges,
-        result,
-        &eval_mode,
-        threading_type,
-    );
+    // let eval_mode = match return_gradients {
+    //     true => EvalMode::ValueGrad,
+    //     false => EvalMode::Value,
+    // };
+    //
+    // let threading_type = match parallel {
+    //     true => ThreadingType::Parallel,
+    //     false => ThreadingType::Serial,
+    // };
+    //
+    // let ncols: usize = match eval_mode {
+    //     EvalMode::Value => 1,
+    //     EvalMode::ValueGrad => 4,
+    // };
+    //
+    // let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
+    // let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
+    // let charges =
+    //     unsafe { ndarray::ArrayView2::from_shape_ptr((ncharge_vecs, nsources), charge_ptr) };
+    // let result = unsafe {
+    //     ndarray::ArrayViewMut3::from_shape_ptr((ncharge_vecs, ntargets, ncols), result_ptr)
+    // };
+    //
+    // make_modified_helmholtz_evaluator(sources, targets, omega).evaluate_in_place(
+    //     charges,
+    //     result,
+    //     &eval_mode,
+    //     threading_type,
+    // );
 }
 
 /// Evaluate the modified Helmholtz potential sum (single precision version).
@@ -593,33 +582,33 @@ pub extern "C" fn evaluate_modified_helmholtz_kernel_f32(
     parallel: bool,
 ) {
 
-    let eval_mode = match return_gradients {
-        true => EvalMode::ValueGrad,
-        false => EvalMode::Value,
-    };
-
-    let threading_type = match parallel {
-        true => ThreadingType::Parallel,
-        false => ThreadingType::Serial,
-    };
-
-    let ncols: usize = match eval_mode {
-        EvalMode::Value => 1,
-        EvalMode::ValueGrad => 4,
-    };
-
-    let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
-    let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
-    let charges =
-        unsafe { ndarray::ArrayView2::from_shape_ptr((ncharge_vecs, nsources), charge_ptr) };
-    let result = unsafe {
-        ndarray::ArrayViewMut3::from_shape_ptr((ncharge_vecs, ntargets, ncols), result_ptr)
-    };
-
-    make_modified_helmholtz_evaluator(sources, targets, omega).evaluate_in_place(
-        charges,
-        result,
-        &eval_mode,
-        threading_type,
-    );
+    // let eval_mode = match return_gradients {
+    //     true => EvalMode::ValueGrad,
+    //     false => EvalMode::Value,
+    // };
+    //
+    // let threading_type = match parallel {
+    //     true => ThreadingType::Parallel,
+    //     false => ThreadingType::Serial,
+    // };
+    //
+    // let ncols: usize = match eval_mode {
+    //     EvalMode::Value => 1,
+    //     EvalMode::ValueGrad => 4,
+    // };
+    //
+    // let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
+    // let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
+    // let charges =
+    //     unsafe { ndarray::ArrayView2::from_shape_ptr((ncharge_vecs, nsources), charge_ptr) };
+    // let result = unsafe {
+    //     ndarray::ArrayViewMut3::from_shape_ptr((ncharge_vecs, ntargets, ncols), result_ptr)
+    // };
+    //
+    // make_modified_helmholtz_evaluator(sources, targets, omega).evaluate_in_place(
+    //     charges,
+    //     result,
+    //     &eval_mode,
+    //     threading_type,
+    // );
 }
