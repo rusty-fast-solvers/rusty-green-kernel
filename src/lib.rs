@@ -255,6 +255,24 @@ macro_rules! evaluate_kernel_impl {
                 kernel_type: KernelType,
                 threading_type: ThreadingType,
             ) {
+                let dimension_type = kernel_dimension(&kernel_type);
+
+                let expected_shape = (targets.len_of(Axis(1)), sources.len_of(Axis(1)));
+                let actual_shape = (result.len_of(Axis(0)), result.len_of(Axis(1)));
+
+                assert!(
+                    expected_shape == actual_shape,
+                    "result array must have shape {:#?} but actual shape is {:#?}",
+                    expected_shape,
+                    actual_shape
+                );
+
+                match dimension_type {
+                    DimensionType::Vectorial => {
+                        panic!("Assembly of kernel matrices only allowed for scalar kernels.")
+                    }
+                    DimensionType::Scalar => (),
+                }
             }
 
             fn evaluate_kernel_in_place(
@@ -302,3 +320,5 @@ macro_rules! evaluate_kernel_impl {
 
 evaluate_kernel_impl!(f32);
 evaluate_kernel_impl!(f64);
+evaluate_kernel_impl!(c32);
+evaluate_kernel_impl!(c64);

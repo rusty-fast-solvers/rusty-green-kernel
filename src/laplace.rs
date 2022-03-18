@@ -1,31 +1,42 @@
 use crate::{EvalMode, ThreadingType};
 /// Implementation of assembler function for Laplace kernels.
 use ndarray::{Array2, ArrayView1, ArrayView2, ArrayViewMut2, ArrayViewMut3, Axis};
-use ndarray_linalg::Scalar;
+use ndarray_linalg::{c32, c64, Scalar};
 use num::traits::FloatConst;
 
 pub(crate) trait LaplaceEvaluator: Scalar {
 
+
+    #[allow(unused_variables)]
     fn laplace_kernel(
         target: ArrayView1<<Self as Scalar>::Real>,
         sources: ArrayView2<<Self as Scalar>::Real>,
         result: ArrayViewMut2<Self>,
         eval_mode: &EvalMode,
-    );
+    ) {
+        panic!("Not implemented for this type.");
+    }
+
     /// Implementation of the Laplace kernel without derivatives.
+    #[allow(unused_variables)]
     fn laplace_kernel_no_deriv(
         target: ArrayView1<<Self as Scalar>::Real>,
         sources: ArrayView2<<Self as Scalar>::Real>,
         result: ArrayViewMut2<Self>,
-    );
+    ) {
+        panic!("Not implemented for this type");
+    }
 
     // Implementation of the Laplace kernel with derivatives.
+    #[allow(unused_variables)]
     fn laplace_kernel_with_deriv(
         target: ArrayView1<<Self as Scalar>::Real>,
         sources: ArrayView2<<Self as Scalar>::Real>,
         result: ArrayViewMut2<Self>,
-    );
-    
+    ) {
+        panic!("Not implemented for this type.");
+    }
+
     #[allow(unused_variables)]
     fn evaluate_in_place_laplace(
         sources: ArrayView2<<Self as Scalar>::Real>,
@@ -35,16 +46,24 @@ pub(crate) trait LaplaceEvaluator: Scalar {
         eval_mode: &EvalMode,
         threading_type: &ThreadingType,
     ) {
+        panic!("Not implemented for this type.");
+    }
 
-    panic!("Not implemented for this type.");
 
+    #[allow(unused_variables)]
+    fn assemble_in_place_laplace(
+        sources: ArrayView2<<Self as Scalar>::Real>,
+        targets: ArrayView2<<Self as Scalar>::Real>,
+        result: ArrayViewMut2<Self>,
+        threading_type: ThreadingType,
+    ) {
+        panic!("Not implemented for this type.");
     }
 }
 
 macro_rules! laplace_impl {
     ($scalar:ty) => {
         impl LaplaceEvaluator for $scalar {
-
             fn laplace_kernel(
                 target: ArrayView1<$scalar>,
                 sources: ArrayView2<$scalar>,
@@ -155,6 +174,36 @@ macro_rules! laplace_impl {
                     });
             }
 
+            fn assemble_in_place_laplace(
+                sources: ArrayView2<<Self as Scalar>::Real>,
+                targets: ArrayView2<<Self as Scalar>::Real>,
+                mut result: ArrayViewMut2<Self>,
+                threading_type: ThreadingType,
+            ) {
+                use ndarray::Zip;
+
+                let nsources = sources.len_of(Axis(1));
+
+                match threading_type {
+                    ThreadingType::Parallel => Zip::from(targets.axis_iter(Axis(1)))
+                        .and(result.axis_iter_mut(Axis(0)))
+                        .par_for_each(|target, result_row| {
+                            let tmp = result_row
+                                .into_shape((1, nsources))
+                                .expect("Cannot convert to 2-dimensional array.");
+                            Self::laplace_kernel(target, sources, tmp, &EvalMode::Value);
+                        }),
+                    ThreadingType::Serial => Zip::from(targets.axis_iter(Axis(1)))
+                        .and(result.axis_iter_mut(Axis(0)))
+                        .for_each(|target, result_row| {
+                            let tmp = result_row
+                                .into_shape((1, nsources))
+                                .expect("Cannot conver to 2-dimensional array.");
+                            Self::laplace_kernel(target, sources, tmp, &EvalMode::Value);
+                        }),
+                }
+            }
+
             fn evaluate_in_place_laplace(
                 sources: ArrayView2<$scalar>,
                 targets: ArrayView2<$scalar>,
@@ -219,6 +268,11 @@ macro_rules! laplace_impl {
     };
 }
 
+// Default implementations for unsupported types.
+impl LaplaceEvaluator for c32 {}
+impl LaplaceEvaluator for c64 {}
+
+// Actual implementations for supported types.
 laplace_impl!(f64);
 laplace_impl!(f32);
 
