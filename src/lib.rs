@@ -255,6 +255,7 @@ macro_rules! evaluate_kernel_impl {
                 kernel_type: KernelType,
                 threading_type: ThreadingType,
             ) {
+                use crate::laplace::LaplaceEvaluator;
                 let dimension_type = kernel_dimension(&kernel_type);
 
                 let expected_shape = (targets.len_of(Axis(1)), sources.len_of(Axis(1)));
@@ -272,6 +273,16 @@ macro_rules! evaluate_kernel_impl {
                         panic!("Assembly of kernel matrices only allowed for scalar kernels.")
                     }
                     DimensionType::Scalar => (),
+                }
+
+                match kernel_type {
+                    KernelType::Laplace => <$result>::assemble_in_place_laplace(
+                        sources,
+                        targets,
+                        result,
+                        &threading_type,
+                    ),
+                    _ => panic!("Not implemented."),
                 }
             }
 

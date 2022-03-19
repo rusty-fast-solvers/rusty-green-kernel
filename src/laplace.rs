@@ -55,7 +55,7 @@ pub(crate) trait LaplaceEvaluator: Scalar {
         sources: ArrayView2<<Self as Scalar>::Real>,
         targets: ArrayView2<<Self as Scalar>::Real>,
         result: ArrayViewMut2<Self>,
-        threading_type: ThreadingType,
+        threading_type: &ThreadingType,
     ) {
         panic!("Not implemented for this type.");
     }
@@ -178,7 +178,7 @@ macro_rules! laplace_impl {
                 sources: ArrayView2<<Self as Scalar>::Real>,
                 targets: ArrayView2<<Self as Scalar>::Real>,
                 mut result: ArrayViewMut2<Self>,
-                threading_type: ThreadingType,
+                threading_type: &ThreadingType,
             ) {
                 use ndarray::Zip;
 
