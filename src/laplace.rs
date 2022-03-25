@@ -1,12 +1,11 @@
-use crate::{EvalMode, ThreadingType};
+use crate::create_pool;
+use crate::EvalMode;
 /// Implementation of assembler function for Laplace kernels.
 use ndarray::{Array2, ArrayView1, ArrayView2, ArrayViewMut2, ArrayViewMut3, Axis};
 use ndarray_linalg::{c32, c64, Scalar};
 use num::traits::FloatConst;
 
 pub(crate) trait LaplaceEvaluator: Scalar {
-
-
     #[allow(unused_variables)]
     fn laplace_kernel(
         target: ArrayView1<<Self as Scalar>::Real>,
@@ -44,18 +43,17 @@ pub(crate) trait LaplaceEvaluator: Scalar {
         charges: ArrayView2<Self>,
         result: ArrayViewMut3<Self>,
         eval_mode: &EvalMode,
-        threading_type: &ThreadingType,
+        num_threads: usize,
     ) {
         panic!("Not implemented for this type.");
     }
-
 
     #[allow(unused_variables)]
     fn assemble_in_place_laplace(
         sources: ArrayView2<<Self as Scalar>::Real>,
         targets: ArrayView2<<Self as Scalar>::Real>,
         result: ArrayViewMut2<Self>,
-        threading_type: &ThreadingType,
+        num_threads: usize,
     ) {
         panic!("Not implemented for this type.");
     }
@@ -178,30 +176,22 @@ macro_rules! laplace_impl {
                 sources: ArrayView2<<Self as Scalar>::Real>,
                 targets: ArrayView2<<Self as Scalar>::Real>,
                 mut result: ArrayViewMut2<Self>,
-                threading_type: &ThreadingType,
+                num_threads: usize,
             ) {
                 use ndarray::Zip;
 
                 let nsources = sources.len_of(Axis(1));
 
-                match threading_type {
-                    ThreadingType::Parallel => Zip::from(targets.axis_iter(Axis(1)))
+                create_pool(num_threads).install(|| {
+                    Zip::from(targets.axis_iter(Axis(1)))
                         .and(result.axis_iter_mut(Axis(0)))
                         .par_for_each(|target, result_row| {
                             let tmp = result_row
                                 .into_shape((1, nsources))
                                 .expect("Cannot convert to 2-dimensional array.");
                             Self::laplace_kernel(target, sources, tmp, &EvalMode::Value);
-                        }),
-                    ThreadingType::Serial => Zip::from(targets.axis_iter(Axis(1)))
-                        .and(result.axis_iter_mut(Axis(0)))
-                        .for_each(|target, result_row| {
-                            let tmp = result_row
-                                .into_shape((1, nsources))
-                                .expect("Cannot conver to 2-dimensional array.");
-                            Self::laplace_kernel(target, sources, tmp, &EvalMode::Value);
-                        }),
-                }
+                        })
+                });
             }
 
             fn evaluate_in_place_laplace(

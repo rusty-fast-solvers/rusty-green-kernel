@@ -93,6 +93,7 @@
 
 pub use ndarray::{Array2, Array3, ArrayView2, ArrayViewMut2, ArrayViewMut3, Axis};
 pub use ndarray_linalg::Scalar;
+pub use rayon;
 
 // Complex types
 pub use ndarray_linalg::c32;
@@ -130,14 +131,6 @@ pub fn kernel_dimension(kernel_type: &KernelType) -> DimensionType {
     }
 }
 
-/// Determines whether to use multithreading or serial evaluation.
-pub enum ThreadingType {
-    /// Use multithreading
-    Parallel,
-    /// Use serial evaluation
-    Serial,
-}
-
 /// This enum defines the Evaluation Mode for kernels.
 pub enum EvalMode {
     /// Only evaluate Green's function values.
@@ -163,12 +156,18 @@ pub(crate) fn get_evaluation_dimension(kernel_type: &KernelType, eval_mode: &Eva
     }
 }
 
+pub(crate) fn create_pool(num_threads: usize) -> rayon::ThreadPool {
+   rayon::ThreadPoolBuilder::new()
+      .num_threads(num_threads)
+      .build().unwrap()
+}
+
 pub trait EvaluateKernel: Scalar {
     fn assemble_kernel(
         sources: ArrayView2<<Self as Scalar>::Real>,
         targets: ArrayView2<<Self as Scalar>::Real>,
         kernel_type: KernelType,
-        threading_type: ThreadingType,
+        num_threads: usize,
     ) -> Array2<Self> {
         let mut result = unsafe {
             Array2::<Self>::uninit((targets.len_of(Axis(1)), sources.len_of(Axis(1)))).assume_init()
@@ -179,7 +178,7 @@ pub trait EvaluateKernel: Scalar {
             targets,
             result.view_mut(),
             kernel_type,
-            threading_type,
+            num_threads,
         );
         result
     }
@@ -189,7 +188,7 @@ pub trait EvaluateKernel: Scalar {
         targets: ArrayView2<<Self as Scalar>::Real>,
         result: ArrayViewMut2<Self>,
         kernel_type: KernelType,
-        threading_type: ThreadingType,
+        num_threads: usize,
     );
 
     fn evaluate_kernel(
@@ -198,7 +197,7 @@ pub trait EvaluateKernel: Scalar {
         charges: ArrayView2<Self>,
         kernel_type: KernelType,
         eval_mode: EvalMode,
-        threading_type: ThreadingType,
+        num_threads: usize,
     ) -> Array3<Self> {
         let nvalues = get_evaluation_dimension(&kernel_type, &eval_mode);
         // Use unsafe operation here as array will be filled with values during in place
@@ -216,7 +215,7 @@ pub trait EvaluateKernel: Scalar {
             result.view_mut(),
             kernel_type,
             eval_mode,
-            threading_type,
+            num_threads,
         );
         result
     }
@@ -228,7 +227,7 @@ pub trait EvaluateKernel: Scalar {
         result: ArrayViewMut3<Self>,
         kernel_type: KernelType,
         eval_mode: EvalMode,
-        threading_type: ThreadingType,
+        num_threads: usize,
     );
 }
 
@@ -253,7 +252,7 @@ macro_rules! evaluate_kernel_impl {
                 targets: ArrayView2<<Self as Scalar>::Real>,
                 result: ArrayViewMut2<Self>,
                 kernel_type: KernelType,
-                threading_type: ThreadingType,
+                num_threads: usize,
             ) {
                 use crate::laplace::LaplaceEvaluator;
                 let dimension_type = kernel_dimension(&kernel_type);
@@ -280,7 +279,7 @@ macro_rules! evaluate_kernel_impl {
                         sources,
                         targets,
                         result,
-                        &threading_type,
+                        num_threads,
                     ),
                     _ => panic!("Not implemented."),
                 }
@@ -293,7 +292,7 @@ macro_rules! evaluate_kernel_impl {
                 result: ArrayViewMut3<$result>,
                 kernel_type: KernelType,
                 eval_mode: EvalMode,
-                threading_type: ThreadingType,
+                num_threads: usize,
             ) {
                 use crate::laplace::LaplaceEvaluator;
 
@@ -320,7 +319,7 @@ macro_rules! evaluate_kernel_impl {
                         charges,
                         result,
                         &eval_mode,
-                        &threading_type,
+                        num_threads
                     ),
                     _ => panic!("Not implemented."),
                 }
