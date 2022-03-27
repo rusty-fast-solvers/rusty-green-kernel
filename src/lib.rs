@@ -250,7 +250,7 @@ macro_rules! evaluate_kernel_impl {
             fn assemble_kernel_in_place(
                 sources: ArrayView2<<Self as Scalar>::Real>,
                 targets: ArrayView2<<Self as Scalar>::Real>,
-                result: ArrayViewMut2<Self>,
+                mut result: ArrayViewMut2<Self>,
                 kernel_type: KernelType,
                 num_threads: usize,
             ) {
@@ -278,11 +278,12 @@ macro_rules! evaluate_kernel_impl {
                     KernelType::Laplace => <$result>::assemble_in_place_laplace(
                         sources,
                         targets,
-                        result,
+                        result.view_mut(),
                         num_threads,
                     ),
                     _ => panic!("Not implemented."),
                 }
+
             }
 
             fn evaluate_kernel_in_place(

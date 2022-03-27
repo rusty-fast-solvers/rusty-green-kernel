@@ -13,7 +13,7 @@ use crate::*;
 /// * `result_ptr` - Pointer to an existing `(ntargets, nsources)` array that stores the result.
 /// * `nsources`   - Number of sources.
 /// * `ntargets`   - Number of targets.
-/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
+/// * `num_threads`   - Number of threads to use
 #[no_mangle]
 pub extern "C" fn assemble_laplace_kernel_f64(
     source_ptr: *const f64,
@@ -21,20 +21,17 @@ pub extern "C" fn assemble_laplace_kernel_f64(
     result_ptr: *mut f64,
     nsources: usize,
     ntargets: usize,
-    parallel: bool,
+    num_threads: usize,
 ) {
 
-    // let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
-    // let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
-    // let result =
-    //     unsafe { ndarray::ArrayViewMut2::from_shape_ptr((ntargets, nsources), result_ptr) };
-    //
-    // let threading_type = match parallel {
-    //     true => ThreadingType::Parallel,
-    //     false => ThreadingType::Serial,
-    // };
-    //
-    // make_laplace_evaluator(sources, targets).assemble_in_place(result, threading_type);
+
+    let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
+    let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
+    let result =
+        unsafe { ndarray::ArrayViewMut2::from_shape_ptr((ntargets, nsources), result_ptr) };
+
+
+    f64::assemble_kernel_in_place(sources, targets, result, KernelType::Laplace ,num_threads);
 }
 
 /// Assemble the Laplace kernel (single precision version).
@@ -47,7 +44,7 @@ pub extern "C" fn assemble_laplace_kernel_f64(
 /// * `result_ptr` - Pointer to an existing `(ntargets, nsources)` array that stores the result.
 /// * `nsources`   - Number of sources.
 /// * `ntargets`   - Number of targets.
-/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
+/// * `num_threads`   - Number of threads to use
 #[no_mangle]
 pub extern "C" fn assemble_laplace_kernel_f32(
     source_ptr: *const f32,
@@ -55,21 +52,20 @@ pub extern "C" fn assemble_laplace_kernel_f32(
     result_ptr: *mut f32,
     nsources: usize,
     ntargets: usize,
-    parallel: bool,
+    num_threads: usize,
 ) {
 
-//     let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
-//     let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
-//     let result =
-//         unsafe { ndarray::ArrayViewMut2::from_shape_ptr((ntargets, nsources), result_ptr) };
-//
-//     let threading_type = match parallel {
-//         true => ThreadingType::Parallel,
-//         false => ThreadingType::Serial,
-//     };
-//
-//     make_laplace_evaluator(sources, targets).assemble_in_place(result, threading_type);
+
+    let targets = unsafe { ndarray::ArrayView2::from_shape_ptr((3, ntargets), target_ptr) };
+    let sources = unsafe { ndarray::ArrayView2::from_shape_ptr((3, nsources), source_ptr) };
+    let result =
+        unsafe { ndarray::ArrayViewMut2::from_shape_ptr((ntargets, nsources), result_ptr) };
+
+
+    f32::assemble_kernel_in_place(sources, targets, result, KernelType::Laplace ,num_threads);
 }
+
+
 /// Evaluate the Laplace potential sum (double precision version).
 /// 
 /// 
@@ -95,7 +91,7 @@ pub extern "C" fn evaluate_laplace_kernel_f64(
     ntargets: usize,
     ncharge_vecs: usize,
     return_gradients: bool,
-    parallel: bool,
+    num_threads: usize,
 ) {
 
     let kernel_type = KernelType::Laplace;
@@ -103,11 +99,6 @@ pub extern "C" fn evaluate_laplace_kernel_f64(
     let eval_mode = match return_gradients {
         true => EvalMode::ValueGrad,
         false => EvalMode::Value,
-    };
-
-    let threading_type = match parallel {
-        true => ThreadingType::Parallel,
-        false => ThreadingType::Serial,
     };
 
     let ncols: usize = match eval_mode {
@@ -123,7 +114,7 @@ pub extern "C" fn evaluate_laplace_kernel_f64(
         ndarray::ArrayViewMut3::from_shape_ptr((ncharge_vecs, ntargets, ncols), result_ptr)
     };
 
-    f64::evaluate_kernel_in_place(sources, targets, charges, result, kernel_type, eval_mode, threading_type);
+    f64::evaluate_kernel_in_place(sources, targets, charges, result, kernel_type, eval_mode, num_threads);
 
 }
 
@@ -152,7 +143,7 @@ pub extern "C" fn evaluate_laplace_kernel_f32(
     ntargets: usize,
     ncharge_vecs: usize,
     return_gradients: bool,
-    parallel: bool,
+    num_threads: usize,
 ) {
 
     let kernel_type = KernelType::Laplace;
@@ -162,10 +153,6 @@ pub extern "C" fn evaluate_laplace_kernel_f32(
         false => EvalMode::Value,
     };
 
-    let threading_type = match parallel {
-        true => ThreadingType::Parallel,
-        false => ThreadingType::Serial,
-    };
 
     let ncols: usize = match eval_mode {
         EvalMode::Value => 1,
@@ -180,7 +167,7 @@ pub extern "C" fn evaluate_laplace_kernel_f32(
         ndarray::ArrayViewMut3::from_shape_ptr((ncharge_vecs, ntargets, ncols), result_ptr)
     };
 
-    f32::evaluate_kernel_in_place(sources, targets, charges, result, kernel_type, eval_mode, threading_type);
+    f32::evaluate_kernel_in_place(sources, targets, charges, result, kernel_type, eval_mode, num_threads);
 
 }
 

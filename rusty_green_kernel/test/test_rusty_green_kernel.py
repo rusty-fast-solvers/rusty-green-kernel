@@ -2,50 +2,57 @@
 import numpy as np
 import pytest
 
-# @pytest.mark.parametrize("parallel", [True, False])
-# @pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 5e-6)])
-# def test_laplace_assemble(dtype, rtol, parallel):
-#     """Test the Laplace kernel."""
-#     from rusty_green_kernel import assemble_laplace_kernel
-#
-#     nsources = 10
-#     ntargets = 20
-#
-#     rng = np.random.default_rng(seed=0)
-#     # Construct target and sources so that they do not overlap
-#     # apart from the first point.
-#
-#     targets = 1.5 + rng.random((3, ntargets), dtype=dtype)
-#     sources = rng.random((3, nsources), dtype=dtype)
-#     sources[:, 0] = targets[:, 0]  # Test what happens if source = target
-#
-#     actual = assemble_laplace_kernel(sources, targets, dtype=dtype, parallel=parallel)
-#
-#     # Calculate expected result
-#
-#     # A divide by zero error is expected to happen here.
-#     # So just ignore the warning.
-#     old_param = np.geterr()["divide"]
-#     np.seterr(divide="ignore")
-#
-#     expected = np.empty((ntargets, nsources), dtype=dtype)
-#
-#     for index, target in enumerate(targets.T):
-#         expected[index, :] = 1.0 / (
-#             4 * np.pi * np.linalg.norm(sources - target.reshape(3, 1), axis=0)
-#         )
-#
-#     # Reset the warnings
-#     np.seterr(divide=old_param)
-#
-#     expected[0, 0] = 0  # First source and target are identical.
-#
-#     np.testing.assert_allclose(actual, expected, rtol=rtol)
+import os
+
+CPU_COUNT = os.cpu_count()
 
 
-@pytest.mark.parametrize("parallel", [True, False])
-@pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 1E-4)])
-def test_laplace_evaluate_only_values(dtype, rtol, parallel):
+@pytest.mark.parametrize("num_threads", [1, CPU_COUNT])
+@pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 5e-6)])
+def test_laplace_assemble(dtype, rtol, num_threads):
+    """Test the Laplace kernel."""
+    from rusty_green_kernel import assemble_laplace_kernel
+
+    nsources = 10
+    ntargets = 20
+
+    rng = np.random.default_rng(seed=0)
+    # Construct target and sources so that they do not overlap
+    # apart from the first point.
+
+    targets = 1.5 + rng.random((3, ntargets), dtype=dtype)
+    sources = rng.random((3, nsources), dtype=dtype)
+    sources[:, 0] = targets[:, 0]  # Test what happens if source = target
+
+    actual = assemble_laplace_kernel(
+        sources, targets, dtype=dtype, num_threads=num_threads
+    )
+
+    # Calculate expected result
+
+    # A divide by zero error is expected to happen here.
+    # So just ignore the warning.
+    old_param = np.geterr()["divide"]
+    np.seterr(divide="ignore")
+
+    expected = np.empty((ntargets, nsources), dtype=dtype)
+
+    for index, target in enumerate(targets.T):
+        expected[index, :] = 1.0 / (
+            4 * np.pi * np.linalg.norm(sources - target.reshape(3, 1), axis=0)
+        )
+
+    # Reset the warnings
+    np.seterr(divide=old_param)
+
+    expected[0, 0] = 0  # First source and target are identical.
+
+    np.testing.assert_allclose(actual, expected, rtol=rtol)
+
+
+@pytest.mark.parametrize("num_threads", [1, CPU_COUNT])
+@pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 1e-4)])
+def test_laplace_evaluate_only_values(dtype, rtol, num_threads):
     """Test the Laplace kernel."""
     from rusty_green_kernel import evaluate_laplace_kernel
 
@@ -63,7 +70,7 @@ def test_laplace_evaluate_only_values(dtype, rtol, parallel):
     charges = rng.random((ncharge_vecs, nsources), dtype=dtype)
 
     actual = evaluate_laplace_kernel(
-        sources, targets, charges, dtype=dtype, parallel=parallel
+        sources, targets, charges, dtype=dtype, num_threads=num_threads
     )
 
     # Calculate expected result
@@ -90,9 +97,9 @@ def test_laplace_evaluate_only_values(dtype, rtol, parallel):
     np.testing.assert_allclose(actual, expected, rtol=rtol)
 
 
-@pytest.mark.parametrize("parallel", [True, False])
-@pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 1E-4)])
-def test_laplace_evaluate_values_and_deriv(dtype, rtol, parallel):
+@pytest.mark.parametrize("num_threads", [1, CPU_COUNT])
+@pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 1e-4)])
+def test_laplace_evaluate_values_and_deriv(dtype, rtol, num_threads):
     """Test the Laplace kernel."""
     from rusty_green_kernel import evaluate_laplace_kernel
 
@@ -110,7 +117,12 @@ def test_laplace_evaluate_values_and_deriv(dtype, rtol, parallel):
     charges = rng.random((ncharge_vecs, nsources), dtype=dtype)
 
     actual = evaluate_laplace_kernel(
-        sources, targets, charges, dtype=dtype, return_gradients=True, parallel=parallel
+        sources,
+        targets,
+        charges,
+        dtype=dtype,
+        return_gradients=True,
+        num_threads=num_threads,
     )
 
     # Calculate expected result

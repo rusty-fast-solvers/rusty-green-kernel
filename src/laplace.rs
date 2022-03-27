@@ -192,6 +192,8 @@ macro_rules! laplace_impl {
                             Self::laplace_kernel(target, sources, tmp, &EvalMode::Value);
                         })
                 });
+
+
             }
 
             fn evaluate_in_place_laplace(
@@ -200,7 +202,7 @@ macro_rules! laplace_impl {
                 charges: ArrayView2<$scalar>,
                 mut result: ArrayViewMut3<$scalar>,
                 eval_mode: &EvalMode,
-                threading_type: &ThreadingType,
+                num_threads: usize,
             ) {
                 use ndarray::Zip;
 
@@ -213,8 +215,8 @@ macro_rules! laplace_impl {
 
                 result.fill(num::traits::zero());
 
-                match threading_type {
-                    ThreadingType::Parallel => Zip::from(targets.axis_iter(Axis(1)))
+                create_pool(num_threads).install(|| {
+                    Zip::from(targets.axis_iter(Axis(1)))
                         .and(result.axis_iter_mut(Axis(1)))
                         .par_for_each(|target, mut result_block| {
                             let mut tmp = Array2::<$scalar>::zeros((chunks, nsources));
@@ -232,27 +234,8 @@ macro_rules! laplace_impl {
                                         },
                                     )
                                 })
-                        }),
-                    ThreadingType::Serial => Zip::from(targets.axis_iter(Axis(1)))
-                        .and(result.axis_iter_mut(Axis(1)))
-                        .for_each(|target, mut result_block| {
-                            let mut tmp = Array2::<$scalar>::zeros((chunks, nsources));
-                            Self::laplace_kernel(target, sources, tmp.view_mut(), eval_mode);
-                            Zip::from(charges.axis_iter(Axis(0)))
-                                .and(result_block.axis_iter_mut(Axis(0)))
-                                .for_each(|charge_vec, result_row| {
-                                    Zip::from(tmp.axis_iter(Axis(0))).and(result_row).for_each(
-                                        |tmp_row, result_elem| {
-                                            Zip::from(tmp_row).and(charge_vec).for_each(
-                                                |tmp_elem, charge_elem| {
-                                                    *result_elem += *tmp_elem * *charge_elem
-                                                },
-                                            )
-                                        },
-                                    )
-                                })
-                        }),
-                }
+                        })
+                });
             }
         }
     };

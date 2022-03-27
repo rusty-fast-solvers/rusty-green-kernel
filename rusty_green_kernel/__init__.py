@@ -11,7 +11,8 @@ The implemented kernels are:
 
 Laplace Kernel: g(x, y) = 1 / (4 pi * | x - y |)
 Helmhotz Kernel: g(x, y) = exp(1j * k * | x - y |) / (4 pi * | x- y|)
-Modified Helmholtz Kernel: g(x, y) = exp(-omega * | x - y | ) / (4 pi * | x - y|)
+Modified Helmholtz Kernel:
+    g(x, y) = exp(-omega * | x - y | ) / (4 pi * | x - y |)
 
 For x = y all kernels are defined to be zero.
 
@@ -30,6 +31,7 @@ can be evaluated.
 
 import numpy as np
 from .rusty_green_kernel import ffi, lib
+import os
 
 __all__ = [
     "assemble_laplace_kernel",
@@ -39,6 +41,8 @@ __all__ = [
     "assemble_modified_helmholtz_kernel",
     "evaluate_modified_helmholtz_kernel",
 ]
+
+CPU_COUNT = os.cpu_count()
 
 
 def as_double_ptr(arr):
@@ -75,7 +79,7 @@ def align_data(arr, dtype=None):
     return np.require(arr, dtype=dtype, requirements=["C", "A"])
 
 
-def assemble_laplace_kernel(sources, targets, dtype=np.float64, parallel=True):
+def assemble_laplace_kernel(sources, targets, dtype=np.float64, num_threads=CPU_COUNT):
     """
     Assemble the Laplace kernel matrix for many targets and sources.
 
@@ -95,8 +99,8 @@ def assemble_laplace_kernel(sources, targets, dtype=np.float64, parallel=True):
         parameters are not given in the specified type, they are
         converted to it. The output is returned as np.float64 (default)
         or np.float32.
-    parallel: bool
-        If True, use multithreaded evaluation for the kernel matrix.
+    num_threads: int
+        Number of CPU threads to use.
 
     Outputs
     -------
@@ -113,12 +117,20 @@ def assemble_laplace_kernel(sources, targets, dtype=np.float64, parallel=True):
 
     if targets.ndim != 2 or targets.shape[0] != 3:
         raise ValueError(
-            f"target must be a 2-dim array of shape (3, ntargets), current shape: {targets.shape}."
+            "target must be a 2-dim array of shape (3, ntargets), current shape:"
+            f" {targets.shape}."
         )
 
     if sources.ndim != 2 or sources.shape[0] != 3:
         raise ValueError(
-            f"sources must be a 2-dim array of shape (3, nsources), current shape: {sources.shape}."
+            "sources must be a 2-dim array of shape (3, nsources), current shape:"
+            f" {sources.shape}."
+        )
+
+    if num_threads == 0:
+        raise ValueError(
+            "number of threads must be larger than zero, current number of threads:"
+            f" {num_threads}."
         )
 
     nsources = sources.shape[1]
@@ -136,7 +148,7 @@ def assemble_laplace_kernel(sources, targets, dtype=np.float64, parallel=True):
             as_float_ptr(result),
             as_usize(nsources),
             as_usize(ntargets),
-            parallel,
+            as_usize(num_threads),
         )
     elif dtype == np.float64:
         lib.assemble_laplace_kernel_f64(
@@ -145,7 +157,7 @@ def assemble_laplace_kernel(sources, targets, dtype=np.float64, parallel=True):
             as_double_ptr(result),
             as_usize(nsources),
             as_usize(ntargets),
-            parallel,
+            as_usize(num_threads),
         )
     else:
         raise NotImplementedError
@@ -154,7 +166,12 @@ def assemble_laplace_kernel(sources, targets, dtype=np.float64, parallel=True):
 
 
 def evaluate_laplace_kernel(
-    sources, targets, charges, dtype=np.float64, parallel=True, return_gradients=False
+    sources,
+    targets,
+    charges,
+    dtype=np.float64,
+    return_gradients=False,
+    num_threads=CPU_COUNT,
 ):
     """
     Evaluate a potential sum for the Laplace kernel.
@@ -205,17 +222,26 @@ def evaluate_laplace_kernel(
 
     if targets.ndim != 2 or targets.shape[0] != 3:
         raise ValueError(
-            f"target must be a 2-dim array of shape (3, ntargets), current shape: {targets.shape}."
+            "target must be a 2-dim array of shape (3, ntargets), current shape:"
+            f" {targets.shape}."
         )
 
     if sources.ndim != 2 or sources.shape[0] != 3:
         raise ValueError(
-            f"sources must be a 2-dim array of shape (3, nsources), current shape: {sources.shape}."
+            "sources must be a 2-dim array of shape (3, nsources), current shape:"
+            f" {sources.shape}."
         )
 
     if charges.shape[-1] != sources.shape[1] or charges.ndim > 2:
         raise ValueError(
-            f"charges must be a 1- or 2-dim array of shape (...,nsources), current shape: {charges.shape}."
+            "charges must be a 1- or 2-dim array of shape (...,nsources), current"
+            f" shape: {charges.shape}."
+        )
+
+    if num_threads == 0:
+        raise ValueError(
+            "number of threads must be larger than zero, current number of threads:"
+            f" {num_threads}."
         )
 
     nsources = sources.shape[1]
@@ -247,7 +273,7 @@ def evaluate_laplace_kernel(
             as_usize(ntargets),
             as_usize(ncharge_vecs),
             return_gradients,
-            parallel,
+            as_usize(num_threads),
         )
     elif dtype == np.float64:
         lib.evaluate_laplace_kernel_f64(
@@ -259,7 +285,7 @@ def evaluate_laplace_kernel(
             as_usize(ntargets),
             as_usize(ncharge_vecs),
             return_gradients,
-            parallel,
+            as_usize(num_threads),
         )
     else:
         raise NotImplementedError
@@ -304,17 +330,20 @@ def assemble_helmholtz_kernel(
 
     if dtype not in [np.complex128, np.complex64]:
         raise ValueError(
-            f"dtype must be one of [np.complex128, np.complex64], current value: {dtype}."
+            "dtype must be one of [np.complex128, np.complex64], current value:"
+            f" {dtype}."
         )
 
     if targets.ndim != 2 or targets.shape[0] != 3:
         raise ValueError(
-            f"target must be a 2-dim array of shape (3, ntargets), current shape: {targets.shape}."
+            "target must be a 2-dim array of shape (3, ntargets), current shape:"
+            f" {targets.shape}."
         )
 
     if sources.ndim != 2 or sources.shape[0] != 3:
         raise ValueError(
-            f"sources must be a 2-dim array of shape (3, nsources), current shape: {sources.shape}."
+            "sources must be a 2-dim array of shape (3, nsources), current shape:"
+            f" {sources.shape}."
         )
 
     nsources = sources.shape[1]
@@ -417,22 +446,26 @@ def evaluate_helmholtz_kernel(
 
     if dtype not in [np.complex128, np.complex64]:
         raise ValueError(
-            f"dtype must be one of [np.complex128, np.complex64], current value: {dtype}."
+            "dtype must be one of [np.complex128, np.complex64], current value:"
+            f" {dtype}."
         )
 
     if targets.ndim != 2 or targets.shape[0] != 3:
         raise ValueError(
-            f"target must be a 2-dim array of shape (3, ntargets), current shape: {targets.shape}."
+            "target must be a 2-dim array of shape (3, ntargets), current shape:"
+            f" {targets.shape}."
         )
 
     if sources.ndim != 2 or sources.shape[0] != 3:
         raise ValueError(
-            f"sources must be a 2-dim array of shape (3, nsources), current shape: {sources.shape}."
+            "sources must be a 2-dim array of shape (3, nsources), current shape:"
+            f" {sources.shape}."
         )
 
     if charges.shape[-1] != sources.shape[1] or charges.ndim > 2:
         raise ValueError(
-            f"charges must be a 1- or 2-dim array of shape (...,nsources), current shape: {charges.shape}."
+            "charges must be a 1- or 2-dim array of shape (...,nsources), current"
+            f" shape: {charges.shape}."
         )
 
     if dtype == np.complex128:
@@ -539,12 +572,14 @@ def assemble_modified_helmholtz_kernel(
 
     if targets.ndim != 2 or targets.shape[0] != 3:
         raise ValueError(
-            f"target must be a 2-dim array of shape (3, ntargets), current shape: {targets.shape}."
+            "target must be a 2-dim array of shape (3, ntargets), current shape:"
+            f" {targets.shape}."
         )
 
     if sources.ndim != 2 or sources.shape[0] != 3:
         raise ValueError(
-            f"sources must be a 2-dim array of shape (3, nsources), current shape: {sources.shape}."
+            "sources must be a 2-dim array of shape (3, nsources), current shape:"
+            f" {sources.shape}."
         )
 
     nsources = sources.shape[1]
@@ -641,17 +676,20 @@ def evaluate_modified_helmholtz_kernel(
 
     if targets.ndim != 2 or targets.shape[0] != 3:
         raise ValueError(
-            f"target must be a 2-dim array of shape (3, ntargets), current shape: {targets.shape}."
+            "target must be a 2-dim array of shape (3, ntargets), current shape:"
+            f" {targets.shape}."
         )
 
     if sources.ndim != 2 or sources.shape[0] != 3:
         raise ValueError(
-            f"sources must be a 2-dim array of shape (3, nsources), current shape: {sources.shape}."
+            "sources must be a 2-dim array of shape (3, nsources), current shape:"
+            f" {sources.shape}."
         )
 
     if charges.shape[-1] != sources.shape[1] or charges.ndim > 2:
         raise ValueError(
-            f"charges must be a 1- or 2-dim array of shape (...,nsources), current shape: {charges.shape}."
+            "charges must be a 1- or 2-dim array of shape (...,nsources), current"
+            f" shape: {charges.shape}."
         )
 
     nsources = sources.shape[1]
