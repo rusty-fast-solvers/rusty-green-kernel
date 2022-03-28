@@ -101,6 +101,7 @@ pub use ndarray_linalg::c64;
 
 pub mod c_api;
 pub(crate) mod laplace;
+pub(crate) mod helmholtz;
 
 /// This enum defines the type of the kernel.
 pub enum KernelType {
