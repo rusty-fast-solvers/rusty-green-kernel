@@ -60,8 +60,7 @@ pub(crate) trait HelmholtzEvaluator: Scalar {
     fn assemble_in_place_helmholtz(
         sources: ArrayView2<<Self as Scalar>::Real>,
         targets: ArrayView2<<Self as Scalar>::Real>,
-        result_real: ArrayViewMut2<<Self as Scalar>::Real>,
-        result_imag: ArrayViewMut2<<Self as Scalar>::Real>,
+        result: ArrayViewMut2<Self>,
         wavenumber: c64,
         num_threads: usize,
     ) {
@@ -180,9 +179,8 @@ macro_rules! helmholtz_impl {
                 let zero: RealType = num::traits::zero();
                 let one: RealType = num::traits::one();
 
-                let m_inv_4pi: RealType =
-                    num::traits::cast::<f64, RealType>(0.25).unwrap()
-                        * num::traits::FloatConst::FRAC_1_PI();
+                let m_inv_4pi: RealType = num::traits::cast::<f64, RealType>(0.25).unwrap()
+                    * num::traits::FloatConst::FRAC_1_PI();
 
                 let wavenumber_real: RealType =
                     num::traits::cast::<f64, RealType>(wavenumber.re).unwrap();
@@ -198,10 +196,7 @@ macro_rules! helmholtz_impl {
                     |&target_value, source_row| {
                         Zip::from(source_row).and(dist.view_mut()).for_each(
                             |&source_value, dist_ref| {
-                                *dist_ref += <RealType>::powi(
-                                    source_value - target_value,
-                                    2,
-                                )
+                                *dist_ref += <RealType>::powi(source_value - target_value, 2)
                             },
                         )
                     },
@@ -214,14 +209,12 @@ macro_rules! helmholtz_impl {
                     .and(result_imag.index_axis_mut(Axis(0), 0))
                     .for_each(|&dist_val, result_real_val, result_imag_val| {
                         let exp_val = <RealType>::exp(-wavenumber_imag * dist_val);
-                        *result_real_val = exp_val
-                            * <RealType>::cos(wavenumber_real * dist_val)
-                            * m_inv_4pi
-                            / dist_val;
-                        *result_imag_val = exp_val
-                            * <RealType>::sin(wavenumber_real * dist_val)
-                            * m_inv_4pi
-                            / dist_val;
+                        *result_real_val =
+                            exp_val * <RealType>::cos(wavenumber_real * dist_val) * m_inv_4pi
+                                / dist_val;
+                        *result_imag_val =
+                            exp_val * <RealType>::sin(wavenumber_real * dist_val) * m_inv_4pi
+                                / dist_val;
                     });
 
                 // Now do the derivative term
@@ -282,24 +275,38 @@ macro_rules! helmholtz_impl {
             fn assemble_in_place_helmholtz(
                 sources: ArrayView2<<$scalar as Scalar>::Real>,
                 targets: ArrayView2<<$scalar as Scalar>::Real>,
-                result_real: ArrayViewMut2<<$scalar as Scalar>::Real>,
-                result_imag: ArrayViewMut2<<$scalar as Scalar>::Real>,
+                mut result: ArrayViewMut2<$scalar>,
                 wavenumber: c64,
                 num_threads: usize,
             ) {
                 use ndarray::Zip;
+
+                type RealType = <$scalar as Scalar>::Real;
 
                 let nsources = sources.len_of(Axis(1));
 
                 create_pool(num_threads).install(|| {
                     Zip::from(targets.axis_iter(Axis(1)))
                         .and(result.axis_iter_mut(Axis(0)))
-                        .par_for_each(|target, result_row| {
-                            let tmp = result_row
-                                .into_shape((1, nsources))
-                                .expect("Cannot convert to 2-dimensional array.");
-                            Self::helmholtz_kernel(target, sources, tmp, &EvalMode::Value);
-                        })
+                        .par_for_each(|target, mut result_row| {
+                            let mut tmp_real = Array2::<RealType>::zeros((1, nsources));
+                            let mut tmp_imag = Array2::<RealType>::zeros((1, nsources));
+                            Self::helmholtz_kernel(
+                                target,
+                                sources,
+                                tmp_real.view_mut(),
+                                tmp_imag.view_mut(),
+                                wavenumber,
+                                &EvalMode::Value,
+                            );
+                            Zip::from(result_row.view_mut())
+                                .and(tmp_real.index_axis(Axis(0), 0))
+                                .and(tmp_imag.index_axis(Axis(0), 0))
+                                .for_each(|result_elem, &tmp_real_elem, &tmp_imag_elem| {
+                                    result_elem.re = tmp_real_elem;
+                                    result_elem.im = tmp_imag_elem;
+                                });
+                        });
                 });
             }
 
@@ -312,6 +319,7 @@ macro_rules! helmholtz_impl {
                 num_threads: usize,
             ) {
                 use ndarray::Zip;
+
 
                 let nsources = sources.len_of(Axis(1));
 
