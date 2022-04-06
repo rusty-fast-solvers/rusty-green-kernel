@@ -294,7 +294,7 @@ def evaluate_laplace_kernel(
 
 
 def assemble_helmholtz_kernel(
-    sources, targets, wavenumber, dtype=np.complex128, parallel=True
+    sources, targets, wavenumber, dtype=np.complex128, num_threads=CPU_COUNT
 ):
     """
     Assemble the Helmholtz kernel matrix for many targets and sources.
@@ -317,8 +317,8 @@ def assemble_helmholtz_kernel(
         parameters are not given in the specified type, they are
         converted to it. The output is returned as np.complex128 (default)
         or np.complex64.
-    parallel: bool
-        If True, use multithreaded evaluation for the kernel matrix.
+    num_threads: int
+        Number of CPU threads to use.
 
     Outputs
     -------
@@ -346,6 +346,12 @@ def assemble_helmholtz_kernel(
             f" {sources.shape}."
         )
 
+    if num_threads == 0:
+        raise ValueError(
+            "number of threads must be larger than zero, current number of threads:"
+            f" {num_threads}."
+        )
+
     nsources = sources.shape[1]
     ntargets = targets.shape[1]
 
@@ -370,7 +376,7 @@ def assemble_helmholtz_kernel(
             as_double(np.imag(wavenumber)),
             as_usize(nsources),
             as_usize(ntargets),
-            parallel,
+            as_usize(num_threads),
         )
     elif real_type == np.float64:
         lib.assemble_helmholtz_kernel_f64(
@@ -381,7 +387,7 @@ def assemble_helmholtz_kernel(
             as_double(np.imag(wavenumber)),
             as_usize(nsources),
             as_usize(ntargets),
-            parallel,
+            as_usize(num_threads),
         )
     else:
         raise NotImplementedError
@@ -397,8 +403,8 @@ def evaluate_helmholtz_kernel(
     charges,
     wavenumber,
     dtype=np.complex128,
-    parallel=True,
     return_gradients=False,
+    num_threads=CPU_COUNT,
 ):
     """
     Evaluate a potential sum for the Helmholtz kernel.
@@ -468,6 +474,12 @@ def evaluate_helmholtz_kernel(
             f" shape: {charges.shape}."
         )
 
+    if num_threads == 0:
+        raise ValueError(
+            "number of threads must be larger than zero, current number of threads:"
+            f" {num_threads}."
+        )
+
     if dtype == np.complex128:
         real_type = np.float64
     elif dtype == np.complex64:
@@ -508,7 +520,7 @@ def evaluate_helmholtz_kernel(
             as_usize(ntargets),
             as_usize(ncharge_vecs),
             return_gradients,
-            parallel,
+            as_usize(num_threads),
         )
     elif dtype == np.complex128:
         lib.evaluate_helmholtz_kernel_f64(
@@ -522,7 +534,7 @@ def evaluate_helmholtz_kernel(
             as_usize(ntargets),
             as_usize(ncharge_vecs),
             return_gradients,
-            parallel,
+            as_usize(num_threads),
         )
     else:
         raise NotImplementedError

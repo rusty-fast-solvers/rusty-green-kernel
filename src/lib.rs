@@ -257,6 +257,7 @@ macro_rules! evaluate_kernel_impl {
                 num_threads: usize,
             ) {
                 use crate::laplace::LaplaceEvaluator;
+                use crate::helmholtz::HelmholtzEvaluator;
                 let dimension_type = kernel_dimension(&kernel_type);
 
                 let expected_shape = (targets.len_of(Axis(1)), sources.len_of(Axis(1)));
@@ -283,6 +284,13 @@ macro_rules! evaluate_kernel_impl {
                         result.view_mut(),
                         num_threads,
                     ),
+                    KernelType::Helmholtz(wavenumber) => <$result>::assemble_in_place_helmholtz(
+                        sources,
+                        targets,
+                        result.view_mut(),
+                        wavenumber,
+                        num_threads,
+                    ),
                     _ => panic!("Not implemented."),
                 }
             }
@@ -297,6 +305,7 @@ macro_rules! evaluate_kernel_impl {
                 num_threads: usize,
             ) {
                 use crate::laplace::LaplaceEvaluator;
+                use crate::helmholtz::HelmholtzEvaluator;
 
                 let nvalues = get_evaluation_dimension(&kernel_type, &eval_mode);
 
@@ -320,6 +329,15 @@ macro_rules! evaluate_kernel_impl {
                         targets,
                         charges,
                         result,
+                        &eval_mode,
+                        num_threads,
+                    ),
+                    KernelType::Helmholtz(wavenumber) => <$result>::evaluate_in_place_helmholtz(
+                        sources,
+                        targets,
+                        charges,
+                        result,
+                        wavenumber,
                         &eval_mode,
                         num_threads,
                     ),

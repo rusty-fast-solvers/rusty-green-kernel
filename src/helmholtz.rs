@@ -336,8 +336,8 @@ macro_rules! helmholtz_impl {
 
                 create_pool(num_threads).install(|| {
                     Zip::from(targets.axis_iter(Axis(1)))
-            .and(result.axis_iter_mut(Axis(1)))
-            .par_for_each(|target, mut result_block| {
+                    .and(result.axis_iter_mut(Axis(1)))
+                    .par_for_each(|target, mut result_block| {
                 let mut tmp_real = Array2::<RealType>::zeros((chunks, nsources));
                 let mut tmp_imag = Array2::<RealType>::zeros((chunks, nsources));
                 Self::helmholtz_kernel(
