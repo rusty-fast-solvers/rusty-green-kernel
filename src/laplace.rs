@@ -192,8 +192,6 @@ macro_rules! laplace_impl {
                             Self::laplace_kernel(target, sources, tmp, &EvalMode::Value);
                         })
                 });
-
-
             }
 
             fn evaluate_in_place_laplace(
@@ -248,4 +246,3 @@ impl LaplaceEvaluator for c64 {}
 // Actual implementations for supported types.
 laplace_impl!(f64);
 laplace_impl!(f32);
-

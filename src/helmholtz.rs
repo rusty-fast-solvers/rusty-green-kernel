@@ -47,8 +47,7 @@ pub(crate) trait HelmholtzEvaluator: Scalar {
         sources: ArrayView2<<Self as Scalar>::Real>,
         targets: ArrayView2<<Self as Scalar>::Real>,
         charges: ArrayView2<Self>,
-        result_real: ArrayViewMut2<<Self as Scalar>::Real>,
-        result_imag: ArrayViewMut2<<Self as Scalar>::Real>,
+        result: ArrayViewMut3<Self>,
         wavenumber: c64,
         eval_mode: &EvalMode,
         num_threads: usize,
@@ -180,7 +179,7 @@ macro_rules! helmholtz_impl {
                 let one: RealType = num::traits::one();
 
                 let m_inv_4pi: RealType = num::traits::cast::<f64, RealType>(0.25).unwrap()
-                    * num::traits::FloatConst::FRAC_1_PI();
+                    * RealType::FRAC_1_PI();
 
                 let wavenumber_real: RealType =
                     num::traits::cast::<f64, RealType>(wavenumber.re).unwrap();
@@ -315,13 +314,18 @@ macro_rules! helmholtz_impl {
                 targets: ArrayView2<<$scalar as Scalar>::Real>,
                 charges: ArrayView2<$scalar>,
                 mut result: ArrayViewMut3<$scalar>,
+                wavenumber: c64,
                 eval_mode: &EvalMode,
                 num_threads: usize,
             ) {
                 use ndarray::Zip;
 
+                type RealType = <$scalar as Scalar>::Real;
 
                 let nsources = sources.len_of(Axis(1));
+
+                let charges_real = charges.map(|item| item.re);
+                let charges_imag = charges.map(|item| item.im);
 
                 let chunks = match eval_mode {
                     EvalMode::Value => 1,
@@ -332,24 +336,45 @@ macro_rules! helmholtz_impl {
 
                 create_pool(num_threads).install(|| {
                     Zip::from(targets.axis_iter(Axis(1)))
-                        .and(result.axis_iter_mut(Axis(1)))
-                        .par_for_each(|target, mut result_block| {
-                            let mut tmp = Array2::<$scalar>::zeros((chunks, nsources));
-                            Self::laplace_kernel(target, sources, tmp.view_mut(), eval_mode);
-                            Zip::from(charges.axis_iter(Axis(0)))
-                                .and(result_block.axis_iter_mut(Axis(0)))
-                                .for_each(|charge_vec, result_row| {
-                                    Zip::from(tmp.axis_iter(Axis(0))).and(result_row).for_each(
-                                        |tmp_row, result_elem| {
-                                            Zip::from(tmp_row).and(charge_vec).for_each(
-                                                |tmp_elem, charge_elem| {
-                                                    *result_elem += *tmp_elem * *charge_elem
-                                                },
-                                            )
+            .and(result.axis_iter_mut(Axis(1)))
+            .par_for_each(|target, mut result_block| {
+                let mut tmp_real = Array2::<RealType>::zeros((chunks, nsources));
+                let mut tmp_imag = Array2::<RealType>::zeros((chunks, nsources));
+                Self::helmholtz_kernel(
+                    target,
+                    sources,
+                    tmp_real.view_mut(),
+                    tmp_imag.view_mut(),
+                    wavenumber,
+                    eval_mode,
+                );
+                Zip::from(charges_real.axis_iter(Axis(0)))
+                    .and(charges_imag.axis_iter(Axis(0)))
+                    .and(result_block.axis_iter_mut(Axis(0)))
+                    .for_each(|charge_vec_real, charge_vec_imag, result_row| {
+                        Zip::from(tmp_real.axis_iter(Axis(0)))
+                            .and(tmp_imag.axis_iter(Axis(0)))
+                            .and(result_row)
+                            .for_each(|tmp_real_row, tmp_imag_row, result_elem| {
+                                Zip::from(tmp_real_row)
+                                    .and(tmp_imag_row)
+                                    .and(charge_vec_real)
+                                    .and(charge_vec_imag)
+                                    .for_each(
+                                        |tmp_elem_real,
+                                         tmp_elem_imag,
+                                         charge_elem_real,
+                                         charge_elem_imag| {
+                                            result_elem.re += *tmp_elem_real * *charge_elem_real
+                                                - *tmp_elem_imag * *charge_elem_imag;
+                                            result_elem.im += *tmp_elem_real * *charge_elem_imag
+                                                + *tmp_elem_imag * *charge_elem_real;
                                         },
                                     )
-                                })
-                        })
+                            })
+                    })
+            })
+
                 });
             }
         }

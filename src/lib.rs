@@ -100,8 +100,8 @@ pub use ndarray_linalg::c32;
 pub use ndarray_linalg::c64;
 
 pub mod c_api;
-pub(crate) mod laplace;
 pub(crate) mod helmholtz;
+pub(crate) mod laplace;
 
 /// This enum defines the type of the kernel.
 pub enum KernelType {
@@ -158,9 +158,10 @@ pub(crate) fn get_evaluation_dimension(kernel_type: &KernelType, eval_mode: &Eva
 }
 
 pub(crate) fn create_pool(num_threads: usize) -> rayon::ThreadPool {
-   rayon::ThreadPoolBuilder::new()
-      .num_threads(num_threads)
-      .build().unwrap()
+    rayon::ThreadPoolBuilder::new()
+        .num_threads(num_threads)
+        .build()
+        .unwrap()
 }
 
 pub trait EvaluateKernel: Scalar {
@@ -284,7 +285,6 @@ macro_rules! evaluate_kernel_impl {
                     ),
                     _ => panic!("Not implemented."),
                 }
-
             }
 
             fn evaluate_kernel_in_place(
@@ -321,7 +321,7 @@ macro_rules! evaluate_kernel_impl {
                         charges,
                         result,
                         &eval_mode,
-                        num_threads
+                        num_threads,
                     ),
                     _ => panic!("Not implemented."),
                 }

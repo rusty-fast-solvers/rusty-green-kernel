@@ -1,9 +1,9 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
-use rusty_kernel_tools::*;
-use rusty_green_kernel::*;
 use ndarray;
 use num::complex::Complex;
 use rand::Rng;
+use rusty_green_kernel::*;
+use rusty_kernel_tools::*;
 
 fn benchmark_laplace_assemble_double_precision(c: &mut Criterion) {
     let nsources = 20000;
@@ -310,18 +310,21 @@ fn benchmark_helmholtz_evaluate_values_and_derivs_double_precision(c: &mut Crite
         item.im = rng.gen::<MyType>();
     });
 
-    c.bench_function("helmholtz evaluate values and derivs double precision", |b| {
-        b.iter(|| {
-            make_helmholtz_evaluator(sources.view(), targets.view(), wavenumber).evaluate_in_place(
-                charges.view(),
-                black_box(result.view_mut()),
-                &EvalMode::ValueGrad,
-                ThreadingType::Parallel,
-            );
-        })
-    });
+    c.bench_function(
+        "helmholtz evaluate values and derivs double precision",
+        |b| {
+            b.iter(|| {
+                make_helmholtz_evaluator(sources.view(), targets.view(), wavenumber)
+                    .evaluate_in_place(
+                        charges.view(),
+                        black_box(result.view_mut()),
+                        &EvalMode::ValueGrad,
+                        ThreadingType::Parallel,
+                    );
+            })
+        },
+    );
 }
-
 
 fn benchmark_helmholtz_evaluate_values_and_derivs_single_precision(c: &mut Criterion) {
     let nsources = 20000;
@@ -346,18 +349,21 @@ fn benchmark_helmholtz_evaluate_values_and_derivs_single_precision(c: &mut Crite
         item.im = rng.gen::<MyType>();
     });
 
-    c.bench_function("helmholtz evaluate values and derivs single precision", |b| {
-        b.iter(|| {
-            make_helmholtz_evaluator(sources.view(), targets.view(), wavenumber).evaluate_in_place(
-                charges.view(),
-                black_box(result.view_mut()),
-                &EvalMode::ValueGrad,
-                ThreadingType::Parallel,
-            );
-        })
-    });
+    c.bench_function(
+        "helmholtz evaluate values and derivs single precision",
+        |b| {
+            b.iter(|| {
+                make_helmholtz_evaluator(sources.view(), targets.view(), wavenumber)
+                    .evaluate_in_place(
+                        charges.view(),
+                        black_box(result.view_mut()),
+                        &EvalMode::ValueGrad,
+                        ThreadingType::Parallel,
+                    );
+            })
+        },
+    );
 }
-
 
 fn benchmark_modified_helmholtz_assemble_double_precision(c: &mut Criterion) {
     let nsources = 20000;
@@ -427,12 +433,13 @@ fn benchmark_modified_helmholtz_evaluate_values_double_precision(c: &mut Criteri
 
     c.bench_function("modified helmholtz evaluate values double precision", |b| {
         b.iter(|| {
-            make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega).evaluate_in_place(
-                charges.view(),
-                black_box(result.view_mut()),
-                &EvalMode::Value,
-                ThreadingType::Parallel,
-            );
+            make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega)
+                .evaluate_in_place(
+                    charges.view(),
+                    black_box(result.view_mut()),
+                    &EvalMode::Value,
+                    ThreadingType::Parallel,
+                );
         })
     });
 }
@@ -459,12 +466,13 @@ fn benchmark_modified_helmholtz_evaluate_values_single_precision(c: &mut Criteri
 
     c.bench_function("modified helmholtz evaluate values single precision", |b| {
         b.iter(|| {
-            make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega).evaluate_in_place(
-                charges.view(),
-                black_box(result.view_mut()),
-                &EvalMode::Value,
-                ThreadingType::Parallel,
-            );
+            make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega)
+                .evaluate_in_place(
+                    charges.view(),
+                    black_box(result.view_mut()),
+                    &EvalMode::Value,
+                    ThreadingType::Parallel,
+                );
         })
     });
 }
@@ -489,16 +497,20 @@ fn benchmark_modified_helmholtz_evaluate_values_and_derivs_double_precision(c: &
     targets.map_inplace(|item| *item = rng.gen::<MyType>());
     charges.map_inplace(|item| *item = rng.gen::<MyType>());
 
-    c.bench_function("modified helmholtz evaluate values and derivs double precision", |b| {
-        b.iter(|| {
-            make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega).evaluate_in_place(
-                charges.view(),
-                black_box(result.view_mut()),
-                &EvalMode::ValueGrad,
-                ThreadingType::Parallel,
-            );
-        })
-    });
+    c.bench_function(
+        "modified helmholtz evaluate values and derivs double precision",
+        |b| {
+            b.iter(|| {
+                make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega)
+                    .evaluate_in_place(
+                        charges.view(),
+                        black_box(result.view_mut()),
+                        &EvalMode::ValueGrad,
+                        ThreadingType::Parallel,
+                    );
+            })
+        },
+    );
 }
 
 fn benchmark_modified_helmholtz_evaluate_values_and_derivs_single_precision(c: &mut Criterion) {
@@ -521,42 +533,44 @@ fn benchmark_modified_helmholtz_evaluate_values_and_derivs_single_precision(c: &
     targets.map_inplace(|item| *item = rng.gen::<MyType>());
     charges.map_inplace(|item| *item = rng.gen::<MyType>());
 
-    c.bench_function("modified helmholtz evaluate values and derivs single precision", |b| {
-        b.iter(|| {
-            make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega).evaluate_in_place(
-                charges.view(),
-                black_box(result.view_mut()),
-                &EvalMode::ValueGrad,
-                ThreadingType::Parallel,
-            );
-        })
-    });
+    c.bench_function(
+        "modified helmholtz evaluate values and derivs single precision",
+        |b| {
+            b.iter(|| {
+                make_modified_helmholtz_evaluator(sources.view(), targets.view(), omega)
+                    .evaluate_in_place(
+                        charges.view(),
+                        black_box(result.view_mut()),
+                        &EvalMode::ValueGrad,
+                        ThreadingType::Parallel,
+                    );
+            })
+        },
+    );
 }
 
-
-
 criterion_group! {
-    name = benches;
-    config = Criterion::default().sample_size(30).measurement_time(std::time::Duration::from_secs(10));
-    targets = benchmark_laplace_assemble_single_precision,
-              benchmark_laplace_assemble_double_precision,
-              benchmark_laplace_evalaute_values_single_precision,
-              benchmark_laplace_evaluate_values_double_precision,
-              benchmark_laplace_evaluate_values_and_derivs_single_precision,
-              benchmark_laplace_evaluate_values_and_derivs_double_precision,
-              benchmark_helmholtz_assemble_single_precision,
-              benchmark_helmholtz_assemble_double_precision,
-              benchmark_helmholtz_evaluate_values_double_precision,
-              benchmark_helmholtz_evaluate_values_single_precision,
-              benchmark_helmholtz_evaluate_values_and_derivs_double_precision,
-              benchmark_helmholtz_evaluate_values_and_derivs_single_precision,
-              benchmark_modified_helmholtz_assemble_single_precision,
-              benchmark_modified_helmholtz_assemble_double_precision,
-              benchmark_modified_helmholtz_evaluate_values_double_precision,
-              benchmark_modified_helmholtz_evaluate_values_single_precision,
-              benchmark_modified_helmholtz_evaluate_values_and_derivs_double_precision,
-              benchmark_modified_helmholtz_evaluate_values_and_derivs_single_precision,
+name = benches;
+config = Criterion::default().sample_size(30).measurement_time(std::time::Duration::from_secs(10));
+targets = benchmark_laplace_assemble_single_precision,
+          benchmark_laplace_assemble_double_precision,
+          benchmark_laplace_evalaute_values_single_precision,
+          benchmark_laplace_evaluate_values_double_precision,
+          benchmark_laplace_evaluate_values_and_derivs_single_precision,
+          benchmark_laplace_evaluate_values_and_derivs_double_precision,
+          benchmark_helmholtz_assemble_single_precision,
+          benchmark_helmholtz_assemble_double_precision,
+          benchmark_helmholtz_evaluate_values_double_precision,
+          benchmark_helmholtz_evaluate_values_single_precision,
+          benchmark_helmholtz_evaluate_values_and_derivs_double_precision,
+          benchmark_helmholtz_evaluate_values_and_derivs_single_precision,
+          benchmark_modified_helmholtz_assemble_single_precision,
+          benchmark_modified_helmholtz_assemble_double_precision,
+          benchmark_modified_helmholtz_evaluate_values_double_precision,
+          benchmark_modified_helmholtz_evaluate_values_single_precision,
+          benchmark_modified_helmholtz_evaluate_values_and_derivs_double_precision,
+          benchmark_modified_helmholtz_evaluate_values_and_derivs_single_precision,
 
 
-            }
+        }
 criterion_main!(benches);
