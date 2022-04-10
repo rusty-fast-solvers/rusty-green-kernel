@@ -198,6 +198,7 @@ def test_helmholtz_assemble(dtype, rtol, num_threads):
 
     np.testing.assert_allclose(actual, expected, rtol=rtol)
 
+
 @pytest.mark.parametrize("num_threads", [1, CPU_COUNT])
 @pytest.mark.parametrize("dtype,rtol", [(np.complex128, 1e-14), (np.complex64, 5e-6)])
 def test_helmholtz_evaluate_only_values(dtype, rtol, num_threads):
@@ -265,7 +266,7 @@ def test_helmholtz_evaluate_values_and_deriv(dtype, rtol, num_threads):
     ncharge_vecs = 2
 
     wavenumber = 2.5 + 1.3j
-    
+
     if dtype == np.complex128:
         real_type = np.float64
     elif dtype == np.complex64:
@@ -645,6 +646,7 @@ def test_helmholtz_at_zero_agrees_with_laplace():
     )
 
     np.testing.assert_allclose(values_helmholtz, values_laplace, rtol=1E-14)
+
 
 def test_helmholtz_imaginary_wavenumber_agrees_with_modified_helmholtz():
     """Test if Helmholtz with wavenumber 0 agrees with Laplace."""

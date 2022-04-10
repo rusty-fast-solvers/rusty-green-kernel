@@ -300,7 +300,6 @@ macro_rules! evaluate_kernel_impl {
                         omega,
                         num_threads,
                     ),
-                    _ => panic!("Not implemented."),
                 }
             }
 
@@ -360,7 +359,6 @@ macro_rules! evaluate_kernel_impl {
                         &eval_mode,
                         num_threads,
                     ),
-                    _ => panic!("Not implemented."),
                 }
             }
         }

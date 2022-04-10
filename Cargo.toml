@@ -25,6 +25,7 @@ rand = "0.8"
 
 [dev-dependencies]
 criterion = { version = "0.3", features = ["html_reports"] }
+num_cpus = "1.*"
 
 [package.metadata.docs.rs]
 rustdoc-args = [ "--html-in-header", "katex-header.html" ]

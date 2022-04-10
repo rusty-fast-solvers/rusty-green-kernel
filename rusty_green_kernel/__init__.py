@@ -600,7 +600,6 @@ def assemble_modified_helmholtz_kernel(
             f" {num_threads}."
         )
 
-
     nsources = sources.shape[1]
     ntargets = targets.shape[1]
 
