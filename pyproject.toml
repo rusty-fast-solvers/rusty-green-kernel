@@ -1,6 +1,11 @@
+[project]
+name = "rusty-green-kernel"
+version = "0.2.0"
+dependencies = ["cffi"]
+
 [build-system]
 requires = ["setuptools", "wheel"]
-build-backend = "setuptools.build_meta:__legacy__"
+build-backend = "maturin"
 
 
 [tool.black]

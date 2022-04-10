@@ -1,6 +1,6 @@
 [package]
 name = "rusty-green-kernel"
-version = "0.1.1"
+version = "0.2.0"
 authors = ["Timo Betcke <timo.betcke@gmail.com>"]
 edition = "2018"
 description = "A library for the evaluation of potential sums for the Laplace, Helmholtz and modified Helmholtz kernel."
@@ -19,8 +19,8 @@ crate-type = ["lib", "cdylib"]
 ndarray = { version = "0.15", features = ["rayon"] }
 rayon = "^1.0.3"
 ndarray-linalg = {version = "0.14"}
-approx = "0.4"
-num = "0.3"
+approx = "0.5"
+num = "0.4"
 rand = "0.8"
 
 [dev-dependencies]
