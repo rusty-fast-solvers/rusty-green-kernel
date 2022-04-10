@@ -323,158 +323,158 @@ def test_helmholtz_evaluate_values_and_deriv(dtype, rtol, num_threads):
     np.testing.assert_allclose(actual, expected, rtol=rtol)
 
 
-# @pytest.mark.parametrize("parallel", [True, False])
-# @pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 5e-6)])
-# def test_modified_helmholtz_assemble(dtype, rtol, parallel):
-#     """Test the modified Helmholtz kernel."""
-#     from rusty_green_kernel import assemble_modified_helmholtz_kernel
-#
-#     nsources = 10
-#     ntargets = 20
-#
-#     omega = 2.5
-#
-#     rng = np.random.default_rng(seed=0)
-#     # Construct target and sources so that they do not overlap
-#     # apart from the first point.
-#
-#     targets = 1.5 + rng.random((3, ntargets), dtype=dtype)
-#     sources = rng.random((3, nsources), dtype=dtype)
-#     sources[:, 0] = targets[:, 0]  # Test what happens if source = target
-#
-#     actual = assemble_modified_helmholtz_kernel(
-#         sources, targets, omega, dtype=dtype, parallel=parallel
-#     )
-#
-#     # Calculate expected result
-#
-#     # A divide by zero error is expected to happen here.
-#     # So just ignore the warning.
-#     old_param = np.geterr()["divide"]
-#     np.seterr(divide="ignore")
-#
-#     expected = np.empty((ntargets, nsources), dtype=dtype)
-#
-#     for index, target in enumerate(targets.T):
-#         dist = np.linalg.norm(sources - target.reshape(3, 1), axis=0)
-#         expected[index, :] = np.exp(-omega * dist) / (4 * np.pi * dist)
-#
-#     # Reset the warnings
-#     np.seterr(divide=old_param)
-#
-#     expected[0, 0] = 0  # First source and target are identical.
-#
-#     np.testing.assert_allclose(actual, expected, rtol=rtol)
-#
-#
-# @pytest.mark.parametrize("parallel", [True, False])
-# @pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 5e-6)])
-# def test_modified_helmholtz_evaluate_only_values(dtype, rtol, parallel):
-#     """Test the modified Helmholtz kernel."""
-#     from rusty_green_kernel import evaluate_modified_helmholtz_kernel
-#
-#     nsources = 10
-#     ntargets = 20
-#     ncharge_vecs = 2
-#
-#     omega = 2.5
-#
-#     rng = np.random.default_rng(seed=0)
-#     # Construct target and sources so that they do not overlap
-#     # apart from the first point.
-#
-#     targets = 1.5 + rng.random((3, ntargets), dtype=dtype)
-#     sources = rng.random((3, nsources), dtype=dtype)
-#     sources[:, 0] = targets[:, 0]  # Test what happens if source = target
-#     charges = rng.random((ncharge_vecs, nsources), dtype=dtype)
-#
-#     actual = evaluate_modified_helmholtz_kernel(
-#         sources, targets, charges, omega, dtype=dtype, parallel=parallel
-#     )
-#
-#     # Calculate expected result
-#
-#     # A divide by zero error is expected to happen here.
-#     # So just ignore the warning.
-#     old_param = np.geterr()["divide"]
-#     np.seterr(divide="ignore")
-#
-#     expected = np.empty((nsources, ntargets), dtype=dtype)
-#
-#     for index, target in enumerate(targets.T):
-#         dist = np.linalg.norm(sources - target.reshape(3, 1), axis=0)
-#         expected[:, index] = np.exp(-omega * dist) / (4 * np.pi * dist)
-#
-#     # Reset the warnings
-#     np.seterr(divide=old_param)
-#
-#     expected[0, 0] = 0  # First source and target are identical.
-#
-#     expected = np.expand_dims(charges @ expected, -1)
-#
-#     np.testing.assert_allclose(actual, expected, rtol=rtol)
-#
-#
-# @pytest.mark.parametrize("parallel", [True, False])
-# @pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 5e-6)])
-# def test_modified_helmholtz_evaluate_values_and_deriv(dtype, rtol, parallel):
-#     """Test the modified Helmholtz kernel."""
-#     from rusty_green_kernel import evaluate_modified_helmholtz_kernel
-#
-#     nsources = 10
-#     ntargets = 20
-#     ncharge_vecs = 2
-#
-#     omega = 2.5
-#
-#     rng = np.random.default_rng(seed=0)
-#     # Construct target and sources so that they do not overlap
-#     # apart from the first point.
-#
-#     targets = 1.5 + rng.random((3, ntargets), dtype=dtype)
-#     sources = rng.random((3, nsources), dtype=dtype)
-#     sources[:, 0] = targets[:, 0]  # Test what happens if source = target
-#     charges = rng.random((ncharge_vecs, nsources), dtype=dtype)
-#
-#     actual = evaluate_modified_helmholtz_kernel(
-#         sources,
-#         targets,
-#         charges,
-#         omega,
-#         dtype=dtype,
-#         return_gradients=True,
-#         parallel=parallel,
-#     )
-#
-#     # Calculate expected result
-#
-#     # A divide by zero error is expected to happen here.
-#     # So just ignore the warning.
-#     old_params = np.geterr()
-#     np.seterr(all="ignore")
-#
-#     expected = np.empty((nsources, ntargets, 4), dtype=dtype)
-#
-#     for index, target in enumerate(targets.T):
-#         diff = target.reshape(3, 1) - sources
-#         dist = np.linalg.norm(diff, axis=0)
-#         expected[:, index, 0] = np.exp(-omega * dist) / (4 * np.pi * dist)
-#         expected[:, index, 1:] = (
-#             diff.T
-#             / (4 * np.pi * dist.reshape(nsources, 1) ** 3)
-#             * np.exp(-omega * dist.reshape(nsources, 1))
-#             * (-omega * dist.reshape(nsources, 1) - 1)
-#         )
-#         expected[dist == 0, index, :] = 0
-#
-#     # Reset the warnings
-#     np.seterr(**old_params)
-#
-#     expected = np.tensordot(charges, expected, 1)
-#
-#     np.testing.assert_allclose(actual, expected, rtol=rtol)
-#
-#
+@pytest.mark.parametrize("num_threads", [1, CPU_COUNT])
+@pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 5e-6)])
+def test_modified_helmholtz_assemble(dtype, rtol, num_threads):
+    """Test the modified Helmholtz kernel."""
+    from rusty_green_kernel import assemble_modified_helmholtz_kernel
+
+    nsources = 10
+    ntargets = 20
+
+    omega = 2.5
+
+    rng = np.random.default_rng(seed=0)
+    # Construct target and sources so that they do not overlap
+    # apart from the first point.
+
+    targets = 1.5 + rng.random((3, ntargets), dtype=dtype)
+    sources = rng.random((3, nsources), dtype=dtype)
+    sources[:, 0] = targets[:, 0]  # Test what happens if source = target
+
+    actual = assemble_modified_helmholtz_kernel(
+        sources, targets, omega, dtype=dtype, num_threads=num_threads
+    )
+
+    # Calculate expected result
+
+    # A divide by zero error is expected to happen here.
+    # So just ignore the warning.
+    old_param = np.geterr()["divide"]
+    np.seterr(divide="ignore")
+
+    expected = np.empty((ntargets, nsources), dtype=dtype)
+
+    for index, target in enumerate(targets.T):
+        dist = np.linalg.norm(sources - target.reshape(3, 1), axis=0)
+        expected[index, :] = np.exp(-omega * dist) / (4 * np.pi * dist)
+
+    # Reset the warnings
+    np.seterr(divide=old_param)
+
+    expected[0, 0] = 0  # First source and target are identical.
+
+    np.testing.assert_allclose(actual, expected, rtol=rtol)
+
+
+@pytest.mark.parametrize("num_threads", [1, CPU_COUNT])
+@pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 5e-6)])
+def test_modified_helmholtz_evaluate_only_values(dtype, rtol, num_threads):
+    """Test the modified Helmholtz kernel."""
+    from rusty_green_kernel import evaluate_modified_helmholtz_kernel
+
+    nsources = 10
+    ntargets = 20
+    ncharge_vecs = 2
+
+    omega = 2.5
+
+    rng = np.random.default_rng(seed=0)
+    # Construct target and sources so that they do not overlap
+    # apart from the first point.
+
+    targets = 1.5 + rng.random((3, ntargets), dtype=dtype)
+    sources = rng.random((3, nsources), dtype=dtype)
+    sources[:, 0] = targets[:, 0]  # Test what happens if source = target
+    charges = rng.random((ncharge_vecs, nsources), dtype=dtype)
+
+    actual = evaluate_modified_helmholtz_kernel(
+        sources, targets, charges, omega, dtype=dtype, num_threads=num_threads
+    )
+
+    # Calculate expected result
+
+    # A divide by zero error is expected to happen here.
+    # So just ignore the warning.
+    old_param = np.geterr()["divide"]
+    np.seterr(divide="ignore")
+
+    expected = np.empty((nsources, ntargets), dtype=dtype)
+
+    for index, target in enumerate(targets.T):
+        dist = np.linalg.norm(sources - target.reshape(3, 1), axis=0)
+        expected[:, index] = np.exp(-omega * dist) / (4 * np.pi * dist)
+
+    # Reset the warnings
+    np.seterr(divide=old_param)
+
+    expected[0, 0] = 0  # First source and target are identical.
+
+    expected = np.expand_dims(charges @ expected, -1)
+
+    np.testing.assert_allclose(actual, expected, rtol=rtol)
+
+
+@pytest.mark.parametrize("num_threads", [1, CPU_COUNT])
+@pytest.mark.parametrize("dtype,rtol", [(np.float64, 1e-14), (np.float32, 5e-6)])
+def test_modified_helmholtz_evaluate_values_and_deriv(dtype, rtol, parallel):
+    """Test the modified Helmholtz kernel."""
+    from rusty_green_kernel import evaluate_modified_helmholtz_kernel
+
+    nsources = 10
+    ntargets = 20
+    ncharge_vecs = 2
+
+    omega = 2.5
+
+    rng = np.random.default_rng(seed=0)
+    # Construct target and sources so that they do not overlap
+    # apart from the first point.
+
+    targets = 1.5 + rng.random((3, ntargets), dtype=dtype)
+    sources = rng.random((3, nsources), dtype=dtype)
+    sources[:, 0] = targets[:, 0]  # Test what happens if source = target
+    charges = rng.random((ncharge_vecs, nsources), dtype=dtype)
+
+    actual = evaluate_modified_helmholtz_kernel(
+        sources,
+        targets,
+        charges,
+        omega,
+        dtype=dtype,
+        return_gradients=True,
+        num_threads=num_threads,
+    )
+
+    # Calculate expected result
+
+    # A divide by zero error is expected to happen here.
+    # So just ignore the warning.
+    old_params = np.geterr()
+    np.seterr(all="ignore")
+
+    expected = np.empty((nsources, ntargets, 4), dtype=dtype)
+
+    for index, target in enumerate(targets.T):
+        diff = target.reshape(3, 1) - sources
+        dist = np.linalg.norm(diff, axis=0)
+        expected[:, index, 0] = np.exp(-omega * dist) / (4 * np.pi * dist)
+        expected[:, index, 1:] = (
+            diff.T
+            / (4 * np.pi * dist.reshape(nsources, 1) ** 3)
+            * np.exp(-omega * dist.reshape(nsources, 1))
+            * (-omega * dist.reshape(nsources, 1) - 1)
+        )
+        expected[dist == 0, index, :] = 0
+
+    # Reset the warnings
+    np.seterr(**old_params)
+
+    expected = np.tensordot(charges, expected, 1)
+
+    np.testing.assert_allclose(actual, expected, rtol=rtol)
+
+
 # def test_laplace_derivative_is_correct():
 #     """Test that the Gradient of the Laplace kernel is correct."""
 #     from rusty_green_kernel import evaluate_laplace_kernel

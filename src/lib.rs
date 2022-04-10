@@ -102,6 +102,7 @@ pub use ndarray_linalg::c64;
 pub mod c_api;
 pub(crate) mod helmholtz;
 pub(crate) mod laplace;
+pub(crate) mod modified_helmholtz;
 
 /// This enum defines the type of the kernel.
 pub enum KernelType {
@@ -258,6 +259,7 @@ macro_rules! evaluate_kernel_impl {
             ) {
                 use crate::laplace::LaplaceEvaluator;
                 use crate::helmholtz::HelmholtzEvaluator;
+                use crate::modified_helmholtz::ModifiedHelmholtzEvaluator;
                 let dimension_type = kernel_dimension(&kernel_type);
 
                 let expected_shape = (targets.len_of(Axis(1)), sources.len_of(Axis(1)));
@@ -291,6 +293,13 @@ macro_rules! evaluate_kernel_impl {
                         wavenumber,
                         num_threads,
                     ),
+                    KernelType::ModifiedHelmholtz(omega) => <$result>::assemble_in_place_modified_helmholtz(
+                        sources,
+                        targets,
+                        result.view_mut(),
+                        omega,
+                        num_threads,
+                    ),
                     _ => panic!("Not implemented."),
                 }
             }
@@ -306,6 +315,7 @@ macro_rules! evaluate_kernel_impl {
             ) {
                 use crate::laplace::LaplaceEvaluator;
                 use crate::helmholtz::HelmholtzEvaluator;
+                use crate::modified_helmholtz::ModifiedHelmholtzEvaluator;
 
                 let nvalues = get_evaluation_dimension(&kernel_type, &eval_mode);
 
@@ -338,6 +348,15 @@ macro_rules! evaluate_kernel_impl {
                         charges,
                         result,
                         wavenumber,
+                        &eval_mode,
+                        num_threads,
+                    ),
+                    KernelType::ModifiedHelmholtz(omega) => <$result>::evaluate_in_place_modified_helmholtz(
+                        sources,
+                        targets,
+                        charges,
+                        result,
+                        omega,
                         &eval_mode,
                         num_threads,
                     ),

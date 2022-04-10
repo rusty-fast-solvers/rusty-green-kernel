@@ -543,7 +543,7 @@ def evaluate_helmholtz_kernel(
 
 
 def assemble_modified_helmholtz_kernel(
-    sources, targets, omega, dtype=np.float64, parallel=True
+    sources, targets, omega, dtype=np.float64, num_threads=CPU_COUNT
 ):
     """
     Assemble the modified Helmholtz kernel matrix for many targets and sources.
@@ -594,6 +594,13 @@ def assemble_modified_helmholtz_kernel(
             f" {sources.shape}."
         )
 
+    if num_threads == 0:
+        raise ValueError(
+            "number of threads must be larger than zero, current number of threads:"
+            f" {num_threads}."
+        )
+
+
     nsources = sources.shape[1]
     ntargets = targets.shape[1]
 
@@ -610,7 +617,7 @@ def assemble_modified_helmholtz_kernel(
             omega,
             as_usize(nsources),
             as_usize(ntargets),
-            parallel,
+            as_usize(num_threads),
         )
     elif dtype == np.float64:
         lib.assemble_modified_helmholtz_kernel_f64(
@@ -620,7 +627,7 @@ def assemble_modified_helmholtz_kernel(
             omega,
             as_usize(nsources),
             as_usize(ntargets),
-            parallel,
+            as_usize(num_threads),
         )
     else:
         raise NotImplementedError
@@ -634,7 +641,7 @@ def evaluate_modified_helmholtz_kernel(
     charges,
     omega,
     dtype=np.float64,
-    parallel=True,
+    num_threads=CPU_COUNT,
     return_gradients=False,
 ):
     """
@@ -704,6 +711,12 @@ def evaluate_modified_helmholtz_kernel(
             f" shape: {charges.shape}."
         )
 
+    if num_threads == 0:
+        raise ValueError(
+            "number of threads must be larger than zero, current number of threads:"
+            f" {num_threads}."
+        )
+
     nsources = sources.shape[1]
     ntargets = targets.shape[1]
 
@@ -734,7 +747,7 @@ def evaluate_modified_helmholtz_kernel(
             as_usize(ntargets),
             as_usize(ncharge_vecs),
             return_gradients,
-            parallel,
+            as_usize(num_threads),
         )
     elif dtype == np.float64:
         lib.evaluate_modified_helmholtz_kernel_f64(
@@ -747,7 +760,7 @@ def evaluate_modified_helmholtz_kernel(
             as_usize(ntargets),
             as_usize(ncharge_vecs),
             return_gradients,
-            parallel,
+            as_usize(num_threads),
         )
     else:
         raise NotImplementedError
