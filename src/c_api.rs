@@ -498,7 +498,7 @@ pub extern "C" fn evaluate_modified_helmholtz_kernel_f64(
     num_threads: usize,
 ) {
 
-    let kernel_type = KernelType::Laplace;
+    let kernel_type = KernelType::ModifiedHelmholtz(omega);
 
     let eval_mode = match return_gradients {
         true => EvalMode::ValueGrad,
@@ -559,7 +559,7 @@ pub extern "C" fn evaluate_modified_helmholtz_kernel_f32(
     num_threads: usize,
 ) {
 
-    let kernel_type = KernelType::Laplace;
+    let kernel_type = KernelType::ModifiedHelmholtz(omega);
 
     let eval_mode = match return_gradients {
         true => EvalMode::ValueGrad,
