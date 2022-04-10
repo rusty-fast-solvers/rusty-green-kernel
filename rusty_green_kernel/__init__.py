@@ -199,8 +199,8 @@ def evaluate_laplace_kernel(
         parameters are not given in the specified type, they are
         converted to it. The output is returned as np.float64 (default)
         or np.float32.
-    parallel: bool
-        If True, use multithreaded evaluation for the kernel matrix.
+    num_threads: int
+        Number of CPU threads to use.
     return_gradients: bool
         If True, return also the gradient of f with respect to the target
         point x_i.
@@ -434,8 +434,8 @@ def evaluate_helmholtz_kernel(
         parameters are not given in the specified type, they are
         converted to it. The output is returned as np.complex128 (default)
         or np.complex64.
-    parallel: bool
-        If True, use multithreaded evaluation for the kernel matrix.
+    num_threads: int
+        Number of CPU threads to use.
     return_gradients: bool
         If True, return also the gradient of f with respect to the target
         point x_i.
@@ -566,8 +566,8 @@ def assemble_modified_helmholtz_kernel(
         parameters are not given in the specified type, they are
         converted to it. The output is returned as np.float64 (default)
         or np.float32.
-    parallel: bool
-        If True, use multithreaded evaluation for the kernel matrix.
+    num_threads: int
+        Number of CPU threads to use.
 
     Outputs
     -------
@@ -671,8 +671,8 @@ def evaluate_modified_helmholtz_kernel(
         parameters are not given in the specified type, they are
         converted to it. The output is returned as np.float64 (default)
         or np.float32.
-    parallel: bool
-        If True, use multithreaded evaluation for the kernel matrix.
+    num_threads: int
+        Number of CPU threads to use.
     return_gradients: bool
         If True, return also the gradient of f with respect to the target
         point x_i.

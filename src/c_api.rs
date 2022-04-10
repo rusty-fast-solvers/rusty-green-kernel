@@ -74,7 +74,7 @@ pub extern "C" fn assemble_laplace_kernel_f32(
 /// * `ntargets`   - Number of targets.
 /// * `ncharge_vecs` - Number of charge vectors.
 /// * `return_gradients` - If true return also the gradients.
-/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
+/// * `num_threads`   - Number of threads to use
 #[no_mangle]
 pub extern "C" fn evaluate_laplace_kernel_f64(
     source_ptr: *const f64,
@@ -132,7 +132,7 @@ pub extern "C" fn evaluate_laplace_kernel_f64(
 /// * `ntargets`   - Number of targets.
 /// * `ncharge_vecs` - Number of charge vectors.
 /// * `return_gradients` - If true return also the gradients.
-/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
+/// * `num_threads`   - Number of threads to use
 #[no_mangle]
 pub extern "C" fn evaluate_laplace_kernel_f32(
     source_ptr: *const f32,
@@ -189,7 +189,7 @@ pub extern "C" fn evaluate_laplace_kernel_f32(
 /// * `wavenumber_imag` - Imaginary part of the wavenumber parameter.
 /// * `nsources`   - Number of sources.
 /// * `ntargets`   - Number of targets.
-/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
+/// * `num_threads`   - Number of threads to use
 #[no_mangle]
 pub extern "C" fn assemble_helmholtz_kernel_f64(
     source_ptr: *const f64,
@@ -232,7 +232,7 @@ pub extern "C" fn assemble_helmholtz_kernel_f64(
 /// * `wavenumber_imag` - Imaginary part of the wavenumber parameter.
 /// * `nsources`   - Number of sources.
 /// * `ntargets`   - Number of targets.
-/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
+/// * `num_threads`   - Number of threads to use
 #[no_mangle]
 pub extern "C" fn assemble_helmholtz_kernel_f32(
     source_ptr: *const f32,
@@ -277,7 +277,7 @@ pub extern "C" fn assemble_helmholtz_kernel_f32(
 /// * `ntargets`   - Number of targets.
 /// * `ncharge_vecs` - Number of charge vectors.
 /// * `return_gradients` - If true return also the gradients.
-/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
+/// * `num_threads`   - Number of threads to use
 #[no_mangle]
 pub extern "C" fn evaluate_helmholtz_kernel_f64(
     source_ptr: *const f64,
@@ -350,7 +350,7 @@ pub extern "C" fn evaluate_helmholtz_kernel_f64(
 /// * `ntargets`   - Number of targets.
 /// * `ncharge_vecs` - Number of charge vectors.
 /// * `return_gradients` - If true return also the gradients.
-/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
+/// * `num_threads`   - Number of threads to use
 #[no_mangle]
 pub extern "C" fn evaluate_helmholtz_kernel_f32(
     source_ptr: *const f32,
@@ -417,7 +417,7 @@ pub extern "C" fn evaluate_helmholtz_kernel_f32(
 /// * `omega`      - The omega parameter of the kernel.
 /// * `nsources`   - Number of sources.
 /// * `ntargets`   - Number of targets.
-/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
+/// * `num_threads`   - Number of threads to use
 #[no_mangle]
 pub extern "C" fn assemble_modified_helmholtz_kernel_f64(
     source_ptr: *const f64,
@@ -448,7 +448,7 @@ pub extern "C" fn assemble_modified_helmholtz_kernel_f64(
 /// * `omega`      - The omega parameter of the kernel.
 /// * `nsources`   - Number of sources.
 /// * `ntargets`   - Number of targets.
-/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
+/// * `num_threads`   - Number of threads to use
 #[no_mangle]
 pub extern "C" fn assemble_modified_helmholtz_kernel_f32(
     source_ptr: *const f32,
@@ -483,7 +483,7 @@ pub extern "C" fn assemble_modified_helmholtz_kernel_f32(
 /// * `ntargets`   - Number of targets.
 /// * `ncharge_vecs` - Number of charge vectors.
 /// * `return_gradients` - If true return also the gradients.
-/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
+/// * `num_threads`   - Number of threads to use
 #[no_mangle]
 pub extern "C" fn evaluate_modified_helmholtz_kernel_f64(
     source_ptr: *const f64,
@@ -544,7 +544,7 @@ pub extern "C" fn evaluate_modified_helmholtz_kernel_f64(
 /// * `ntargets`   - Number of targets.
 /// * `ncharge_vecs` - Number of charge vectors.
 /// * `return_gradients` - If true return also the gradients.
-/// * `parallel`   - If true, assemble multithreaded, otherwise single threaded.
+/// * `num_threads`   - Number of threads to use
 #[no_mangle]
 pub extern "C" fn evaluate_modified_helmholtz_kernel_f32(
     source_ptr: *const f32,
